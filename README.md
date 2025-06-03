@@ -15,6 +15,8 @@ This project, developed as part of Programming 2 (CS-2023), implements a foundat
 - **Operator Overloading**
   - Assignment (`=`)
   - Unary minus (`-`)
+  - Pre and Post-increment operator (`++`)
+  - Pre and Post-decrement operator (`--`)
   - Binary operators (`+`, `-`, `*` for vector-vector and vector-scalar operations)
 - **Bounds Checking**
   - Overloaded square brackets (`[]`) for 0-based indexing
