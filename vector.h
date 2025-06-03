@@ -7,8 +7,9 @@
 #include <sstream>
 #include <string>
 
+
 // Forward declaration if matrix is used in ToMatrix()
-class matrix;
+class Matrix;
 
 class Vector {
 private:            
@@ -61,4 +62,5 @@ public:
     Matrix ToMatrix() const;                           // Convert to Matrix object
 };
 
+#include "matrix.h"
 #endif
