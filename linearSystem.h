@@ -25,4 +25,17 @@ private:
     LinearSystem(const LinearSystem& other); // prevent copy constructor
 };
 
+class PosSymLinSystem : public LinearSystem {
+public:
+    // Constructor
+    PosSymLinSystem(Matrix& A, Vector& b);
+    
+    // Override Solve method to use Conjugate Gradient
+    Vector Solve() override;
+
+private:
+    // Helper methods for Conjugate Gradient
+    double DotProduct(const Vector& a, const Vector& b);
+    Vector MatrixVectorMultiply(const Matrix& A, const Vector& x);
+};
 #endif

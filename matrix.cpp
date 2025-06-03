@@ -280,3 +280,15 @@
         }
         return inv;
     }
+
+    bool Matrix::Symmetric() const {
+    if (!Square()) return false;
+    for (int i = 0; i < mNumRows; i++) {
+        for (int j = 0; j < i; j++) {
+            if (mData[i][j] != mData[j][i]) {
+                return false;
+            }
+        }
+    }
+    return true;
+}

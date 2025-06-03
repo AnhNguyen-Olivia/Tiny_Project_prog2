@@ -45,6 +45,8 @@ public:
     Matrix operator-() const;                   // Negation operator
     double Determinant() const;                 // Calculate the determinant of the matrix
     Matrix Inverse() const;                     // Calculate the inverse of the matrix
+    bool Square() const { return mNumRows == mNumCols; }  // Check the square property of the matrix
+    bool Symmetric() const;                     // Check the symmetry of the matrix
 
     void Print() const;                         // Print the matrix for debugging
 };
