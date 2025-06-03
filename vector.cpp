@@ -5,17 +5,22 @@
 #include <cassert>
 #include <sstream>
 #include <iomanip>
+#include <stdexcept> // For std::invalid_argument
 
 // Constructor: initialize a vector with given size, all elements set to 0
 Vector::Vector(int size)
     : mSize(size), mData(size > 0 ? new double[size]() : nullptr) {
-    assert(size > 0);       // Ensure valid size
+    if (size <= 0) {
+        throw std::invalid_argument("Vector size must be positive");
+    }
 }
 
 // Constructor from array: copy data from input array to new vector
 Vector::Vector(double array[], int size)
     : mSize(size), mData(size > 0 ? new double[size] : nullptr) {
-    assert(size > 0);
+    if (size <= 0) {
+        throw std::invalid_argument("Vector size must be positive");
+    }
     for (int i = 0; i < mSize; ++i) {
         mData[i] = array[i];
     }
@@ -56,25 +61,33 @@ double* Vector::getData() const { return mData; }           // Get pointer to ra
 
 // [] operator (0-based)
 double& Vector::operator[](int index) {
-    assert(index >= 0 && index < mSize);
+    if (index < 0 || index >= mSize) {
+        throw std::out_of_range("Vector index out of range");
+    }
     return mData[index];
 }
 
 // [] operator (0-based) const
 const double& Vector::operator[](int index) const {
-    assert(index >= 0 && index < mSize);
+    if (index < 0 || index >= mSize) {
+        throw std::out_of_range("Vector index out of range");
+    }
     return mData[index];
 }
 
 // () operator (1-based)
 double& Vector::operator()(int index) {
-    assert(index >= 1 && index <= mSize);
+    if (index < 1 || index > mSize) {
+        throw std::out_of_range("Vector 1-based index out of range");
+    }
     return mData[index - 1];
 }
 
 // () operator (1-based) const
 const double& Vector::operator()(int index) const {
-    assert(index >= 1 && index <= mSize);
+    if (index < 1 || index > mSize) {
+        throw std::out_of_range("Vector 1-based index out of range");
+    }
     return mData[index - 1];
 }
 
@@ -116,7 +129,9 @@ Vector Vector::operator--(int) {
 
 // + operator
 Vector Vector::operator+(const Vector& other) const {
-    assert(mSize == other.mSize);
+    if (mSize != other.mSize) {
+        throw std::invalid_argument("Vector sizes do not match for addition");
+    }
     Vector result(mSize);
     for (int i = 0; i < mSize; ++i)
         result.mData[i] = mData[i] + other.mData[i];
@@ -125,7 +140,9 @@ Vector Vector::operator+(const Vector& other) const {
 
 // += operator
 Vector& Vector::operator+=(const Vector& other) {
-    assert(mSize == other.mSize);
+    if (mSize != other.mSize) {
+        throw std::invalid_argument("Vector sizes do not match for addition");
+    }
     for (int i = 0; i < mSize; ++i)
         mData[i] += other.mData[i];
     return *this;

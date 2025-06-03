@@ -15,6 +15,12 @@ private:
     int passedTests = 0;
     const double EPSILON = 1e-10;  // For floating point comparisons
 
+    // ANSI color codes for output
+    const string GREEN = "\033[32m";
+    const string RED = "\033[31m";
+    const string YELLOW = "\033[33m";
+    const string RESET = "\033[0m";
+
     bool almostEqual(double a, double b) const {
         return fabs(a - b) < EPSILON;
     }
@@ -28,27 +34,41 @@ private:
     }
 
     void runTest(const string& testName, function<bool()> testFunction) {
+        const int RESULT_COL = 62; // Column where PASS/FAIL/WARN starts
         totalTests++;
-        cout << "  Testing: " << left << setw(40) << testName << " ... ";
-        
+
+        // Print test name
+        cout << "  " << testName;
+
+        // Calculate and print dots so that result always starts at RESULT_COL
+        int dots = RESULT_COL - 2 - static_cast<int>(testName.length());
+        if (dots < 3) dots = 3;
+        cout << string(dots, '.');
+
+        cout << " ";
+
         try {
             bool result = testFunction();
             if (result) {
-                cout << "PASSED" << endl;  // Should be: PASSED
+                cout << GREEN << "PASS" << RESET << endl;
                 passedTests++;
             } else {
-                cout << "FAILED" << endl;  // Should be: FAILED only if there's a bug
+                cout << RED << "FAIL" << RESET << endl;
             }
         } catch (const exception& e) {
-            cout << "EXCEPTION: " << e.what() << endl;  // Should be: EXCEPTION message only for error tests
+            cout << YELLOW << "WARN" << RESET << " (" << e.what() << ")" << endl;
         } catch (...) {
-            cout << "UNKNOWN EXCEPTION" << endl;  // Should not normally see this
+            cout << RED << "FAIL" << RESET << " (Unknown exception)" << endl;
         }
     }
 
     void printSectionHeader(const string& sectionName) {
-        cout << "\n=== " << sectionName << " ===" << endl;
-        // Should be: ===== SECTION NAME =====
+        const int WIDTH = 70;
+        string centered = sectionName;
+        int pad = (WIDTH - centered.length()) / 2;
+        cout << "\n" << string(WIDTH, '=') << endl;
+        cout << string(pad, ' ') << centered << endl;
+        cout << string(WIDTH, '=') << RESET << endl;
     }
 
 public:
@@ -355,11 +375,10 @@ public:
     }
     
     void runAllTests() {
-        cout << "\n==============================================" << endl;
-        cout << "      VECTOR CLASS TEST SUITE" << endl;
-        cout << "==============================================" << endl;
-        // Should be: Test suite header with title and dividers
-        
+        cout << "\n" << string(50, '=') << RESET << endl;
+        cout << "           VECTOR CLASS TEST SUITE" << RESET << endl;
+        cout << string(50, '=') << RESET << endl;
+
         testConstructors();
         testAccessors();
         testAssignment();
@@ -367,17 +386,21 @@ public:
         testBinaryOperators();
         testUtility();
         testErrorHandling();
-        
+
         // Print summary
-        cout << "\n==============================================" << endl;
-        cout << "TEST SUMMARY:" << endl;
-        cout << "  Total tests:  " << totalTests << endl;
-        cout << "  Tests passed: " << passedTests << " (" 
-             << fixed << setprecision(1) << (totalTests > 0 ? (100.0 * passedTests / totalTests) : 0) 
+        cout << "\n" << string(50, '=') << RESET << endl;
+        cout << "TEST SUMMARY:" << RESET << endl;
+        cout << "  Total tests : " << setw(3) << totalTests << endl;
+        cout << "  Tests passed: " << setw(3) << passedTests << " ("
+             << fixed << setprecision(1) << (totalTests > 0 ? (100.0 * passedTests / totalTests) : 0)
              << "%)" << endl;
-        cout << "  Tests failed: " << (totalTests - passedTests) << endl;
-        cout << "==============================================" << endl;
-        // Should be: Summary showing all tests passed (100%)
+        cout << "  Tests failed: " << setw(3) << (totalTests - passedTests) << endl;
+        if (passedTests == totalTests) {
+            cout << GREEN << "  ALL TESTS PASSED" << RESET << endl;
+        } else {
+            cout << RED << "  SOME TESTS FAILED" << RESET << endl;
+        }
+        cout << string(50, '=') << RESET << endl;
     }
 };
 
