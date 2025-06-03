@@ -66,3 +66,59 @@ Vector LinearSystem::Solve() {
 
     return x;
 }
+
+// PosSymLinSystem implementation
+
+PosSymLinSystem::PosSymLinSystem(Matrix& A, Vector& b) : LinearSystem(A, b) {
+    // Check that the matrix is symmetric
+    if (!A.Symmetric()) {
+        throw std::invalid_argument("Matrix must be symmetric for PosSymLinSystem");
+    }
+}
+
+Vector PosSymLinSystem::Solve() {
+    // Conjugate Gradient method implementation
+    const Matrix& A = *mpA;
+    const Vector& b = *mpb;
+    
+    const int maxIterations = 1000;
+    const double tolerance = 1e-10;
+    
+    Vector x(mSize); // Initial guess (all zeros)
+    Vector r = b - MatrixVectorMultiply(A, x);
+    Vector p = r;
+    double rsold = DotProduct(r, r);
+    
+    for (int i = 0; i < maxIterations; i++) {
+        Vector Ap = MatrixVectorMultiply(A, p);
+        double alpha = rsold / DotProduct(p, Ap);
+        x = x + p * alpha;
+        r = r - Ap * alpha;
+        
+        double rsnew = DotProduct(r, r);
+        if (sqrt(rsnew) < tolerance) {
+            break;
+        }
+        
+        p = r + p * (rsnew / rsold);
+        rsold = rsnew;
+    }
+    
+    return x;
+}
+
+double PosSymLinSystem::DotProduct(const Vector& a, const Vector& b) {
+    return a * b;
+}
+
+Vector PosSymLinSystem::MatrixVectorMultiply(const Matrix& A, const Vector& x) {
+    Vector result(mSize);
+    for (int i = 1; i <= mSize; i++) {
+        double sum = 0.0;
+        for (int j = 1; j <= mSize; j++) {
+            sum += A(i,j) * x(j);
+        }
+        result(i) = sum;
+    }
+    return result;
+}
