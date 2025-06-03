@@ -26,6 +26,7 @@ public:
     int GetNumRows() const;         // Get number of rows
     int GetNumCols() const;         // Get number of columns
 
+
     // Access operator for 1-based indexing
     double& operator()(int i, int j);               // Access operator for non-const access
     const double& operator()(int i, int j) const;   // Access operator for const access

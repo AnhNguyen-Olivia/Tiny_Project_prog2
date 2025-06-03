@@ -169,7 +169,7 @@
 
     // * vector
     Vector Matrix::operator*(const Vector& vec) const {
-        assert(mNumCols == vec.size());
+        assert(mNumCols == vec.getSize()); 
         Vector result(mNumRows);
         for (int i = 0; i < mNumRows; ++i) {
             result[i] = 0.0;
