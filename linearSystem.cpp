@@ -6,6 +6,8 @@
 #include <cmath>
 #include <algorithm>
 
+
+//constructor
 LinearSystem::LinearSystem(const Matrix& A, const Vector& b) {
     assert(A.GetNumRows() == A.GetNumCols());
     assert(A.GetNumRows() == b.getSize());
@@ -15,10 +17,13 @@ LinearSystem::LinearSystem(const Matrix& A, const Vector& b) {
     mpb = new Vector(b);
 }
 
+//destructor
 LinearSystem::~LinearSystem() {
     delete mpA;
     delete mpb;
 }
+
+
 
 Vector LinearSystem::Solve() {
     int n = mSize;
