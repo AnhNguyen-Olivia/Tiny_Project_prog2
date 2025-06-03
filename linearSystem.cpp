@@ -87,15 +87,15 @@ Vector PosSymLinSystem::Solve() {
     for (int i = 0; i < maxIterations; i++) {
         Vector Ap = MatrixVectorMultiply(A, p);
         double alpha = rsold / DotProduct(p, Ap);
-        x = x + alpha * p;
-        r = r - alpha * Ap;
+        x = x + p * alpha;
+        r = r - Ap * alpha;
         
         double rsnew = DotProduct(r, r);
         if (sqrt(rsnew) < tolerance) {
             break;
         }
         
-        p = r + (rsnew / rsold) * p;
+        p = r + p * (rsnew / rsold);
         rsold = rsnew;
     }
     
