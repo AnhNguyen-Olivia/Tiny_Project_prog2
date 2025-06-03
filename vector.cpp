@@ -6,13 +6,13 @@
 #include <sstream>
 #include <iomanip>
 
-// Constructor
+// Constructor: initialize a vector with given size, all elements set to 0
 Vector::Vector(int size)
     : mSize(size), mData(size > 0 ? new double[size]() : nullptr) {
-    assert(size > 0);
+    assert(size > 0);       // Ensure valid size
 }
 
-// Constructor from array
+// Constructor from array: copy data from input array to new vector
 Vector::Vector(double array[], int size)
     : mSize(size), mData(size > 0 ? new double[size] : nullptr) {
     assert(size > 0);
@@ -29,7 +29,7 @@ Vector::Vector(const Vector& other)
     }
 }
 
-// Destructor
+// Destructor: release allocated memory
 Vector::~Vector() {
     delete[] mData;
     mData = nullptr;
@@ -37,9 +37,10 @@ Vector::~Vector() {
 }
 
 // Assignment operator
-Vector& Vector::operator=(const Vector& other) {
-    if (this == &other) return *this;
-    delete[] mData;
+Vector& Vector::operator=(const Vector& other) {            
+    if (this == &other) return *this;                      // Avoid self-assignment
+    delete[] mData;                                        // Clean up existing memory
+
     mSize = other.mSize;
     mData = mSize > 0 ? new double[mSize] : nullptr;
     for (int i = 0; i < mSize; ++i) {
@@ -48,9 +49,10 @@ Vector& Vector::operator=(const Vector& other) {
     return *this;
 }
 
-// Accessors
-int Vector::getSize() const { return mSize; }
-double* Vector::getData() const { return mData; }
+// Accessors: 
+int Vector::getSize() const { return mSize; }               //Get the number of elements in the vector
+double* Vector::getData() const { return mData; }           // Get pointer to raw data (use with caution)
+
 
 // [] operator (0-based)
 double& Vector::operator[](int index) {
