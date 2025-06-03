@@ -70,7 +70,7 @@ This project, developed as part of Programming 2 (CS-2023), implements a foundat
 ### A.4: Non-Square Linear System Class
 
 - **Solving Methods**
-  - Moore-Penrose Inverse
+  - Pseudo Inverse (Moore-Penrose Inverse)
   - Tikhonov Regularization
 
 ---
