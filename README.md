@@ -15,7 +15,7 @@ This project, developed as part of Programming 2 (CS-2023), implements a foundat
 - **Operator Overloading**
   - Assignment (`=`)
   - Unary minus (`-`)
-  - Binary operators (`+`, `-`, `*`) for vector-vector and vector-scalar operations
+  - Binary operators (`+`, `-`, `*` for vector-vector and vector-scalar operations)
 - **Bounds Checking**
   - Overloaded square brackets (`[]`) for 0-based indexing
   - Overloaded round brackets (`()`) for 1-based indexing
@@ -40,8 +40,8 @@ This project, developed as part of Programming 2 (CS-2023), implements a foundat
 - **Operator Overloading**
   - Assignment (`=`)
   - Unary minus (`-`)
-  - Binary operators (`+`, `-`, `*`) for matrix-matrix, matrix-vector, and matrix-scalar operations
-- **Matrix Properties**
+  - Binary operators (`+`, `-`, `*` for matrix-matrix, matrix-vector, and matrix-scalar operations)
+- **Other Matrix Properties**
   - Determinant (for square matrices)
   - Inverse (for square matrices)
   - Pseudo-inverse (Moore-Penrose inverse)
@@ -80,7 +80,7 @@ This project, developed as part of Programming 2 (CS-2023), implements a foundat
 ### B.1: Dataset: Computer Hardware Dataset
 
 - **Instances:** 209
-- **Features:**
+- **Features (for each Instance):**
     1. Vendor name
     2. Model name
     3. MYCT: Machine cycle time (ns)
