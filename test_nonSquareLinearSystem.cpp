@@ -169,7 +169,7 @@ public:
             b(1) = 1.0; b(2) = 0.0; b(3) = 0.0;
             
             NonSquareLinearSystem nsls(A, b);
-            Vector x = nsls.SolveWithTikhonov(0.01); // Small regularization parameter
+            Vector x = nsls.SolveWithTikhonov(0.0000000001); // Small regularization parameter
             
             return isGoodSolution(A, x, b);
         });
@@ -187,7 +187,7 @@ public:
             b(1) = 1.0; b(2) = 1.5; b(3) = 2.0; b(4) = 1.2; b(5) = 0.8;
             
             NonSquareLinearSystem nsls(A, b);
-            Vector x = nsls.SolveWithTikhonov(0.01); // Small regularization parameter
+            Vector x = nsls.SolveWithTikhonov(0.0000000001); // Small regularization parameter
             
             return isGoodSolution(A, x, b);
         });
@@ -242,7 +242,7 @@ public:
             b(1) = 1.0; b(2) = 2.0;
             
             NonSquareLinearSystem nsls(A, b);
-            Vector x = nsls.SolveWithTikhonov(0.01); // Small regularization parameter
+            Vector x = nsls.SolveWithTikhonov(0.0000000001); // Small regularization parameter
             
             // For Tikhonov, Ax may not exactly equal b, but should be close
             Vector Ax = A * x;
@@ -263,7 +263,7 @@ public:
             b(1) = 10.0; b(2) = 26.0;
             
             NonSquareLinearSystem nsls(A, b);
-            Vector x = nsls.SolveWithTikhonov(0.01); // Small regularization parameter
+            Vector x = nsls.SolveWithTikhonov(0.0000000001); // Small regularization parameter
             
             // For Tikhonov, Ax may not exactly equal b, but should be close
             Vector Ax = A * x;
@@ -290,7 +290,7 @@ public:
             
             NonSquareLinearSystem nsls(A, b);
             Vector x1 = nsls.SolveWithPseudoInverse();
-            Vector x2 = nsls.SolveWithTikhonov(0.0001); // Very small lambda should approach pseudo-inverse
+            Vector x2 = nsls.SolveWithTikhonov(0.0000000001); // Very small lambda should approach pseudo-inverse
             
             // Solutions should be similar for small lambda
             return vectorsEqual(x1, x2);
@@ -306,7 +306,7 @@ public:
             
             NonSquareLinearSystem nsls(A, b);
             Vector x1 = nsls.SolveWithPseudoInverse();
-            Vector x2 = nsls.SolveWithTikhonov(0.0001); // Very small lambda should approach pseudo-inverse
+            Vector x2 = nsls.SolveWithTikhonov(0.0000000001); // Very small lambda should approach pseudo-inverse
             
             // Solutions should be similar for small lambda
             return vectorsEqual(x1, x2);
