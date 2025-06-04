@@ -1,4 +1,15 @@
+<<<<<<< HEAD
 #include "linearSystem.h"
+=======
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+#include <sstream>
+#include <cmath>
+#include <stdexcept>
+#include <algorithm>
+>>>>>>> 93787ab9dc2d4dc65aaaa16cc9a47921f87a5691
 #include "matrix.h"
 #include "vector.h"
 
