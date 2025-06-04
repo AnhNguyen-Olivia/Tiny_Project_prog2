@@ -5,7 +5,9 @@
 
     // Constructor
     Matrix::Matrix(int numRows, int numCols) {
-        assert(numRows > 0 && numCols > 0);
+        if (numRows <= 0 || numCols <= 0) {
+            throw std::invalid_argument("Matrix dimensions must be positive");
+        }
         mNumRows = numRows;
         mNumCols = numCols;
 
@@ -128,19 +130,25 @@
 
     // Access operator ()
     double& Matrix::operator()(int i, int j) {
-        assert(i >= 1 && i <= mNumRows && j >= 1 && j <= mNumCols);
+        if (i < 1 || i > mNumRows || j < 1 || j > mNumCols) {
+            throw std::out_of_range("Matrix indices out of range");
+        }
         return mData[i - 1][j - 1];
     }
 
     // Const access operator ()
     const double& Matrix::operator()(int i, int j) const {
-        assert(i >= 1 && i <= mNumRows && j >= 1 && j <= mNumCols);
+        if (i < 1 || i > mNumRows || j < 1 || j > mNumCols) {
+            throw std::out_of_range("Matrix indices out of range");
+        }
         return mData[i - 1][j - 1];
     }
 
     // + operator
     Matrix Matrix::operator+(const Matrix& other) const {
-        assert(mNumRows == other.mNumRows && mNumCols == other.mNumCols);
+        if (mNumRows != other.mNumRows || mNumCols != other.mNumCols) {
+            throw std::invalid_argument("Matrix size mismatch in addition");
+        }
         Matrix result(mNumRows, mNumCols);
         for (int i = 0; i < mNumRows; ++i)
             for (int j = 0; j < mNumCols; ++j)
@@ -150,7 +158,9 @@
 
     // - operator
     Matrix Matrix::operator-(const Matrix& other) const {
-        assert(mNumRows == other.mNumRows && mNumCols == other.mNumCols);
+        if (mNumRows != other.mNumRows || mNumCols != other.mNumCols) {
+            throw std::invalid_argument("Matrix size mismatch in subtraction");
+        }
         Matrix result(mNumRows, mNumCols);
         for (int i = 0; i < mNumRows; ++i)
             for (int j = 0; j < mNumCols; ++j)
@@ -181,7 +191,9 @@
 
     // * matrix
     Matrix Matrix::operator*(const Matrix& other) const {
-        assert(mNumCols == other.mNumRows);
+        if (mNumCols != other.mNumRows) {
+            throw std::invalid_argument("Matrix size mismatch in multiplication");
+        }
         Matrix result(mNumRows, other.mNumCols);
         for (int i = 0; i < mNumRows; ++i) {
             for (int j = 0; j < other.mNumCols; ++j) {
@@ -214,7 +226,9 @@
     }
 
     double Matrix::Determinant() const {
-        assert(mNumRows == mNumCols);
+        if (mNumRows != mNumCols) {
+            throw std::invalid_argument("Determinant is only defined for square matrices");
+        }
         int n = mNumRows;
         if (n == 1) return mData[0][0];
         if (n == 2) return mData[0][0] * mData[1][1] - mData[0][1] * mData[1][0];
@@ -241,11 +255,15 @@
     }
 
     Matrix Matrix::Inverse() const {
-        assert(mNumRows == mNumCols);
+        if (mNumRows != mNumCols) {
+            throw std::invalid_argument("Inverse is only defined for square matrices");
+        }
         int n = mNumRows;
         double det = this->Determinant();
         const double EPS = 1e-12;
-        assert(std::abs(det) > EPS && "Matrix is singular or nearly singular");
+        if (std::abs(det) <= EPS) {
+            throw std::runtime_error("Matrix is singular or nearly singular");
+        }
 
         Matrix inv(n, n);
         if (n == 1) {
