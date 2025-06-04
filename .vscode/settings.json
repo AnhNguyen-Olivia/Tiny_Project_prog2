@@ -69,6 +69,9 @@
         "numbers": "cpp",
         "span": "cpp",
         "text_encoding": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "chrono": "cpp",
+        "forward_list": "cpp",
+        "ratio": "cpp"
     }
 }

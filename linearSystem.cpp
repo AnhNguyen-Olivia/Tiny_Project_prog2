@@ -9,8 +9,12 @@
 
 //constructor
 LinearSystem::LinearSystem(const Matrix& A, const Vector& b) {
-    assert(A.GetNumRows() == A.GetNumCols());
-    assert(A.GetNumRows() == b.getSize());
+    if (A.GetNumRows() != A.GetNumCols()) {
+        throw std::invalid_argument("Matrix must be square");
+    }
+    if (A.GetNumRows() != b.getSize()) {
+        throw std::invalid_argument("Matrix and vector size mismatch");
+    }
 
     mSize = A.GetNumRows();
     mpA = new Matrix(A);

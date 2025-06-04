@@ -2,18 +2,27 @@
 
 NonSquareLinearSystem::NonSquareLinearSystem(const Matrix& A, const Vector& b) 
     : _A(A), _b(b) {
-    assert(A.GetNumRows() == b.getSize() && "Dimension mismatch!");
+    if (A.GetNumRows() != b.getSize()) {
+        throw std::invalid_argument("Dimension mismatch!");
+    };
 }
 
 Vector NonSquareLinearSystem::SolveWithPseudoInverse() const {
-    Matrix A_pseudo = _A.PseudoInverse();
-    Matrix b_mat = _b.ToMatrix();
-    Matrix result = A_pseudo * b_mat;
-    Vector x(result.GetNumRows());
-    for (int i = 1; i <= result.GetNumRows(); ++i) {
-        x(i) = result(i, 1);
+    if (_A.GetNumRows() >= _A.GetNumCols()) {
+        // Over-determined: x = (A^T A)^-1 A^T b
+        Matrix A_T = _A.Transpose();
+        Matrix ATA = A_T * _A;
+        Vector ATb = A_T * _b;
+        LinearSystem ls(ATA, ATb);
+        return ls.Solve();
+    } else {
+        // Under-determined: x = A^T (A A^T)^-1 b
+        Matrix A_T = _A.Transpose();
+        Matrix AAT = _A * A_T;
+        LinearSystem ls(AAT, _b);
+        Vector y = ls.Solve();
+        return A_T * y;
     }
-    return x;
 }
 
 Vector NonSquareLinearSystem::SolveWithTikhonov(double lambda) const {
