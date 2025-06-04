@@ -2,11 +2,11 @@
 #include "matrix.h"
 #include "linearSystem.h"
 
-// Constructor
-Matrix::Matrix(int numRows, int numCols) {
-    assert(numRows > 0 && numCols > 0);
-    mNumRows = numRows;
-    mNumCols = numCols;
+    // Constructor
+    Matrix::Matrix(int numRows, int numCols) {
+        assert(numRows > 0 && numCols > 0);
+        mNumRows = numRows;
+        mNumCols = numCols;
 
     mData = new double*[mNumRows];
     for (int i = 0; i < mNumRows; ++i) {
@@ -125,37 +125,37 @@ Matrix& Matrix::operator=(const Matrix& other) {
 int Matrix::GetNumRows() const { return mNumRows; }
 int Matrix::GetNumCols() const { return mNumCols; }
 
-// Access operator ()
-double& Matrix::operator()(int i, int j) {
-    assert(i >= 1 && i <= mNumRows && j >= 1 && j <= mNumCols);
-    return mData[i - 1][j - 1];
-}
+    // Access operator ()
+    double& Matrix::operator()(int i, int j) {
+        assert(i >= 1 && i <= mNumRows && j >= 1 && j <= mNumCols);
+        return mData[i - 1][j - 1];
+    }
 
-// Const access operator ()
-const double& Matrix::operator()(int i, int j) const {
-    assert(i >= 1 && i <= mNumRows && j >= 1 && j <= mNumCols);
-    return mData[i - 1][j - 1];
-}
+    // Const access operator ()
+    const double& Matrix::operator()(int i, int j) const {
+        assert(i >= 1 && i <= mNumRows && j >= 1 && j <= mNumCols);
+        return mData[i - 1][j - 1];
+    }
 
-// + operator
-Matrix Matrix::operator+(const Matrix& other) const {
-    assert(mNumRows == other.mNumRows && mNumCols == other.mNumCols);
-    Matrix result(mNumRows, mNumCols);
-    for (int i = 0; i < mNumRows; ++i)
-        for (int j = 0; j < mNumCols; ++j)
-            result.mData[i][j] = mData[i][j] + other.mData[i][j];
-    return result;
-}
+    // + operator
+    Matrix Matrix::operator+(const Matrix& other) const {
+        assert(mNumRows == other.mNumRows && mNumCols == other.mNumCols);
+        Matrix result(mNumRows, mNumCols);
+        for (int i = 0; i < mNumRows; ++i)
+            for (int j = 0; j < mNumCols; ++j)
+                result.mData[i][j] = mData[i][j] + other.mData[i][j];
+        return result;
+    }
 
-// - operator
-Matrix Matrix::operator-(const Matrix& other) const {
-    assert(mNumRows == other.mNumRows && mNumCols == other.mNumCols);
-    Matrix result(mNumRows, mNumCols);
-    for (int i = 0; i < mNumRows; ++i)
-        for (int j = 0; j < mNumCols; ++j)
-            result.mData[i][j] = mData[i][j] - other.mData[i][j];
-    return result;
-}
+    // - operator
+    Matrix Matrix::operator-(const Matrix& other) const {
+        assert(mNumRows == other.mNumRows && mNumCols == other.mNumCols);
+        Matrix result(mNumRows, mNumCols);
+        for (int i = 0; i < mNumRows; ++i)
+            for (int j = 0; j < mNumCols; ++j)
+                result.mData[i][j] = mData[i][j] - other.mData[i][j];
+        return result;
+    }
 
 // * scalar
 Matrix Matrix::operator*(double scalar) const {
@@ -178,19 +178,19 @@ Vector Matrix::operator*(const Vector& vec) const {
     return result;
 }
 
-// * matrix
-Matrix Matrix::operator*(const Matrix& other) const {
-    assert(mNumCols == other.mNumRows);
-    Matrix result(mNumRows, other.mNumCols);
-    for (int i = 0; i < mNumRows; ++i) {
-        for (int j = 0; j < other.mNumCols; ++j) {
-            result.mData[i][j] = 0.0;
-            for (int k = 0; k < mNumCols; ++k)
-                result.mData[i][j] += mData[i][k] * other.mData[k][j];
+    // * matrix
+    Matrix Matrix::operator*(const Matrix& other) const {
+        assert(mNumCols == other.mNumRows);
+        Matrix result(mNumRows, other.mNumCols);
+        for (int i = 0; i < mNumRows; ++i) {
+            for (int j = 0; j < other.mNumCols; ++j) {
+                result.mData[i][j] = 0.0;
+                for (int k = 0; k < mNumCols; ++k)
+                    result.mData[i][j] += mData[i][k] * other.mData[k][j];
+            }
         }
+        return result;
     }
-    return result;
-}
 
 // Unary minus operator
 Matrix Matrix::operator-() const {
@@ -212,16 +212,16 @@ void Matrix::Print() const {
     }
 }
 
-double Matrix::Determinant() const {
-    assert(mNumRows == mNumCols);
-    int n = mNumRows;
-    if (n == 1) return mData[0][0];
-    if (n == 2) return mData[0][0] * mData[1][1] - mData[0][1] * mData[1][0];
-    if (n == 3) {
-        return mData[0][0] * (mData[1][1] * mData[2][2] - mData[1][2] * mData[2][1])
-                - mData[0][1] * (mData[1][0] * mData[2][2] - mData[1][2] * mData[2][0])
-                + mData[0][2] * (mData[1][0] * mData[2][1] - mData[1][1] * mData[2][0]);
-    }
+    double Matrix::Determinant() const {
+        assert(mNumRows == mNumCols);
+        int n = mNumRows;
+        if (n == 1) return mData[0][0];
+        if (n == 2) return mData[0][0] * mData[1][1] - mData[0][1] * mData[1][0];
+        if (n == 3) {
+            return mData[0][0] * (mData[1][1] * mData[2][2] - mData[1][2] * mData[2][1])
+                 - mData[0][1] * (mData[1][0] * mData[2][2] - mData[1][2] * mData[2][0])
+                 + mData[0][2] * (mData[1][0] * mData[2][1] - mData[1][1] * mData[2][0]);
+        }
 
     double det = 0.0;
     for (int p = 0; p < n; ++p) {
@@ -239,12 +239,12 @@ double Matrix::Determinant() const {
     return det;
 }
 
-Matrix Matrix::Inverse() const {
-    assert(mNumRows == mNumCols);
-    int n = mNumRows;
-    double det = this->Determinant();
-    const double EPS = 1e-12;
-    assert(std::abs(det) > EPS && "Matrix is singular or nearly singular");
+    Matrix Matrix::Inverse() const {
+        assert(mNumRows == mNumCols);
+        int n = mNumRows;
+        double det = this->Determinant();
+        const double EPS = 1e-12;
+        assert(std::abs(det) > EPS && "Matrix is singular or nearly singular");
 
     Matrix inv(n, n);
     if (n == 1) {

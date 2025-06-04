@@ -6,6 +6,8 @@
 #include <cmath>
 #include <functional>
 #include <vector>
+#include <chrono>
+#include <ctime>
 
 using namespace std;
 
@@ -13,6 +15,7 @@ class VectorTestSuite {
 private:
     int totalTests = 0;
     int passedTests = 0;
+    int testCounter = 1; // For test IDs
     const double EPSILON = 1e-10;  // For floating point comparisons
 
     // ANSI color codes for output
@@ -34,19 +37,24 @@ private:
     }
 
     void runTest(const string& testName, function<bool()> testFunction) {
-        const int RESULT_COL = 62; // Column where PASS/FAIL/WARN starts
+        const int RESULT_COL = 60; // Column where PASS/FAIL should start
         totalTests++;
 
-        // Print test name
-        cout << "  " << testName;
+        // Format test ID
+        ostringstream idStream;
+        idStream << "[T" << setw(2) << setfill('0') << testCounter++ << "]";
+        string testID = idStream.str();
 
-        // Calculate and print dots so that result always starts at RESULT_COL
-        int dots = RESULT_COL - 2 - static_cast<int>(testName.length());
+        // Print test ID and name together
+        cout << "  " << testID << "  " << testName;
+
+        // Calculate and print dots
+        int currentLength = 2 + testID.length() + 2 + testName.length(); // 2 for "  ", 2 for "  "
+        int dots = RESULT_COL - currentLength;
         if (dots < 3) dots = 3;
         cout << string(dots, '.');
 
-        cout << " ";
-
+        // Result
         try {
             bool result = testFunction();
             if (result) {
@@ -62,18 +70,32 @@ private:
         }
     }
 
-    void printSectionHeader(const string& sectionName) {
-        const int WIDTH = 70;
-        string centered = sectionName;
-        int pad = (WIDTH - centered.length()) / 2;
-        cout << "\n" << string(WIDTH, '=') << endl;
-        cout << string(pad, ' ') << centered << endl;
-        cout << string(WIDTH, '=') << RESET << endl;
+    void printSuiteHeader() {
+        // Version and timestamp
+        const string VERSION = "v1.0";
+        auto now = chrono::system_clock::now();
+        time_t now_c = chrono::system_clock::to_time_t(now);
+        tm local_tm;
+        localtime_s(&local_tm, &now_c);
+        char timebuf[32];
+        strftime(timebuf, sizeof(timebuf), "%Y-%m-%d  %H:%M:%S", &local_tm);
+
+        cout << "\n" << string(50, '=') << RESET << endl;
+        cout << "Test Suite: VECTOR CLASS " << VERSION << endl;
+        cout << "Run date: " << timebuf << endl;
+        cout << string(50, '=') << RESET << endl;
     }
 
 public:
+    // Helper to print section headers in the test output
+    void printSectionHeader(const std::string& sectionName) {
+        cout << "\n" << string(40, '-') << endl;
+        cout << sectionName << endl;
+        cout << string(40, '-') << endl;
+    }
+
     void testConstructors() {
-        printSectionHeader("Constructor Tests");
+        this->printSectionHeader("Constructor Tests");
         
         runTest("Default constructor initialization", [&]() {
             Vector v(3);
@@ -98,7 +120,7 @@ public:
     }
 
     void testAccessors() {
-        printSectionHeader("Accessor Tests");
+        this->printSectionHeader("Accessor Tests");
         
         runTest("getSize()", [&]() {
             Vector v(5);
@@ -147,7 +169,7 @@ public:
     }
     
     void testAssignment() {
-        printSectionHeader("Assignment Tests");
+        this->printSectionHeader("Assignment Tests");
         
         runTest("Assignment operator", [&]() {
             double arr[] = {1.5, 2.5, 3.5};
@@ -169,7 +191,7 @@ public:
     }
     
     void testUnaryOperators() {
-        printSectionHeader("Unary Operator Tests");
+        this->printSectionHeader("Unary Operator Tests");
         
         runTest("Negation operator (-)", [&]() {
             double arr[] = {1.5, 2.5, 3.5};
@@ -217,7 +239,7 @@ public:
     }
     
     void testBinaryOperators() {
-        printSectionHeader("Binary Operator Tests");
+        this->printSectionHeader("Binary Operator Tests");
         
         runTest("Addition operator (+)", [&]() {
             double arr1[] = {1.0, 2.0, 3.0};
@@ -287,7 +309,7 @@ public:
     }
     
     void testUtility() {
-        printSectionHeader("Utility Function Tests");
+        this->printSectionHeader("Utility Function Tests");
         
         runTest("toString()", [&]() {
             double arr[] = {1.5, 2.5, 3.5};
@@ -313,7 +335,7 @@ public:
     }
     
     void testErrorHandling() {
-        printSectionHeader("Error Handling Tests");
+        this->printSectionHeader("Error Handling Tests");
         
         runTest("Invalid size constructor", [&]() {
             bool exceptionCaught = false;
@@ -375,9 +397,7 @@ public:
     }
     
     void runAllTests() {
-        cout << "\n" << string(50, '=') << RESET << endl;
-        cout << "           VECTOR CLASS TEST SUITE" << RESET << endl;
-        cout << string(50, '=') << RESET << endl;
+        printSuiteHeader();
 
         testConstructors();
         testAccessors();
