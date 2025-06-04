@@ -42,10 +42,9 @@ Vector::~Vector() {
 }
 
 // Assignment operator
-Vector& Vector::operator=(const Vector& other) {            
-    if (this == &other) return *this;                      // Avoid self-assignment
-    delete[] mData;                                        // Clean up existing memory
-
+Vector& Vector::operator=(const Vector& other) {
+    if (this == &other) return *this; // Self-assignment check
+    delete[] mData;
     mSize = other.mSize;
     mData = mSize > 0 ? new double[mSize] : nullptr;
     for (int i = 0; i < mSize; ++i) {

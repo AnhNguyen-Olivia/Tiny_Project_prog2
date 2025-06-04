@@ -78,7 +78,8 @@
                     AAT_inv(j, i) = col(j);
                 }
             }
-            return (A_T * AAT_inv).Transpose();
+            // *** FIX: Remove .Transpose() ***
+            return A_T * AAT_inv;
         }
     }
 
@@ -179,14 +180,14 @@
 
     // * vector
     Vector Matrix::operator*(const Vector& vec) const {
-        assert(mNumCols == vec.getSize()); 
-        Vector result(mNumRows);
-        for (int i = 0; i < mNumRows; ++i) {
-            result[i] = 0.0;
-            for (int j = 0; j < mNumCols; ++j)
-                result[i] += mData[i][j] * vec[j];
-        }
-        return result;
+    assert(mNumCols == vec.getSize());
+    Vector result(mNumRows);
+    for (int i = 1; i <= mNumRows; ++i) {
+        result(i) = 0.0;
+        for (int j = 1; j <= mNumCols; ++j)
+            result(i) += (*this)(i, j) * vec(j);
+    }
+    return result;
     }
 
     // * matrix
@@ -259,41 +260,42 @@
             throw std::invalid_argument("Inverse is only defined for square matrices");
         }
         int n = mNumRows;
-        double det = this->Determinant();
-        const double EPS = 1e-12;
-        if (std::abs(det) <= EPS) {
-            throw std::runtime_error("Matrix is singular or nearly singular");
-        }
+        Matrix A(*this);
+        Matrix inv = Matrix::IdentityMatrix(n);
 
-        Matrix inv(n, n);
-        if (n == 1) {
-            inv.mData[0][0] = 1.0 / mData[0][0];
-            return inv;
-        }
-        if (n == 2) {
-            inv.mData[0][0] =  mData[1][1] / det;
-            inv.mData[0][1] = -mData[0][1] / det;
-            inv.mData[1][0] = -mData[1][0] / det;
-            inv.mData[1][1] =  mData[0][0] / det;
-            return inv;
-        }
-        // For n > 2, use cofactor expansion
-        for (int i = 0; i < n; ++i) {
-            for (int j = 0; j < n; ++j) {
-                Matrix minor(n - 1, n - 1);
-                int rowIdx = 0;
-                for (int r = 0; r < n; ++r) {
-                    if (r == i) continue;
-                    int colIdx = 0;
-                    for (int c = 0; c < n; ++c) {
-                        if (c == j) continue;
-                        minor.mData[rowIdx][colIdx] = mData[r][c];
-                        ++colIdx;
+        for (int i = 1; i <= n; ++i) {
+            // Find the pivot
+            double pivot = A(i, i);
+            if (std::abs(pivot) < 1e-12) {
+                // Try to swap with a lower row
+                bool swapped = false;
+                for (int k = i + 1; k <= n; ++k) {
+                    if (std::abs(A(k, i)) > 1e-12) {
+                        // Swap rows i and k in both A and inv
+                        for (int j = 1; j <= n; ++j) {
+                            std::swap(A(i, j), A(k, j));
+                            std::swap(inv(i, j), inv(k, j));
+                        }
+                        pivot = A(i, i);
+                        swapped = true;
+                        break;
                     }
-                    ++rowIdx;
                 }
-                double cofactor = ((i + j) % 2 == 0 ? 1 : -1) * minor.Determinant();
-                inv.mData[j][i] = cofactor / det; // Transpose for adjugate
+                if (!swapped) throw std::runtime_error("Matrix is singular or nearly singular");
+            }
+            // Normalize the pivot row
+            for (int j = 1; j <= n; ++j) {
+                A(i, j) /= pivot;
+                inv(i, j) /= pivot;
+            }
+            // Eliminate other rows
+            for (int k = 1; k <= n; ++k) {
+                if (k == i) continue;
+                double factor = A(k, i);
+                for (int j = 1; j <= n; ++j) {
+                    A(k, j) -= factor * A(i, j);
+                    inv(k, j) -= factor * inv(i, j);
+                }
             }
         }
         return inv;
