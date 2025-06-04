@@ -98,7 +98,7 @@ private:
             Vector x = ls.Solve();
             
             // For identity matrix, solution should equal the right-hand side
-            return suite->vectorsEqual(x, b);
+            return suite->isSolution(A, x, b);
         }
     };
 
@@ -116,14 +116,10 @@ private:
             
             b(1) = 7.0; b(2) = 13.0;
             
-            // Expected solution: x = 1.0, y = 3.0
-            Vector expected(2);
-            expected(1) = 1.0; expected(2) = 3.0;
-            
             LinearSystem ls(A, b);
             Vector x = ls.Solve();
             
-            return suite->vectorsEqual(x, expected);
+            return suite->isSolution(A, x, b);
         }
     };
 
