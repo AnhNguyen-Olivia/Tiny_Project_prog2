@@ -6,6 +6,43 @@ This project, developed as part of Programming 2 (CS-2023), implements a foundat
 
 ---
 
+## Guide: How to Use
+
+1. **Clone the repository:**
+
+   ```sh
+   git clone https://github.com/AnhNguyen-Olivia/Tiny_Project_prog2.git
+   cd Tiny_Project_prog2
+   ```
+
+2. **Build the project:**
+
+   ```bash
+   g++ part_B.cpp matrix.cpp vector.cpp linearSystem.cpp nonSquareLinearSystem.cpp -o part_B -std=c++11
+   ```
+
+3. **Run the program:**
+
+   ```bash
+   ./part_B
+   ```
+
+4. **Usage examples:**
+   The terminal should output the results of the linear regression model, including the coefficients and the RMSE of the predictions.
+
+  ```terminal
+  Coefficients:
+  [ -0.01, 0.02, 0.00, 0.76, 3.07, -0.20 ]
+
+  Test RMSE: 151.09
+  ````
+
+5. **Test cases:**
+
+   The project includes test cases for the vector and matrix classes, as well as the linear system solver. You can run these tests by executing the `part_B` program, which will automatically run the tests and display the results.
+
+---
+
 ## Part A: Linear Algebra System
 
 ### A.1: Vector Class
@@ -84,7 +121,7 @@ This project, developed as part of Programming 2 (CS-2023), implements a foundat
 
 ## Part B: Linear Regression for CPU Performance
 
-### B.1: Dataset: Computer Hardware Dataset
+### B.1: Dataset: [Computer Hardware Dataset](https://archive.ics.uci.edu/ml/datasets/Computer%2BHardware)
 
 - **Instances:** 209
 - **Features (for each Instance):**

@@ -59,7 +59,7 @@ double* Vector::getData() const { return mData; }           // Get pointer to ra
 
 // [] operator (0-based)
 double& Vector::operator[](int index) {
-    if (index < 0 || index >= mSize) {
+    if (index < 0 || index >= mSize) {                      //bonus checking 
         throw std::out_of_range("Vector index out of range");
     }
     return mData[index];
@@ -78,7 +78,7 @@ double& Vector::operator()(int index) {
     if (index < 1 || index > mSize) {
         throw std::out_of_range("Vector 1-based index out of range");
     }
-    return mData[index - 1];
+    return mData[index - 1];                                //convert to based-0 -> return const
 }
 
 // () operator (1-based) const
@@ -89,30 +89,30 @@ const double& Vector::operator()(int index) const {
     return mData[index - 1];
 }
 
-// Unary minus
+// Unary minus --> negates all elements
 Vector Vector::operator-() const {
-    Vector result(mSize);
-    for (int i = 0; i < mSize; ++i)
-        result.mData[i] = -mData[i];
+    Vector result(mSize);                                  //create the new vector at the same size
+    for (int i = 0; i < mSize; ++i)                        //iterate all element  
+        result.mData[i] = -mData[i];                       //implement the unary minus operate
     return result;
 }
 
-// Prefix increment
+// Prefix increment--> (++i)
 Vector& Vector::operator++() {
-    for (int i = 0; i < mSize; ++i)
-        ++mData[i];
-    return *this;
+    for (int i = 0; i < mSize; ++i)                       //increase all element 
+        ++mData[i];                                       
+    return *this;                                         // return reference to modify "this"
 }
 
 // Postfix increment
-Vector Vector::operator++(int) {
-    Vector temp(*this);
-    ++(*this);
-    return temp;
+Vector Vector::operator++(int) {                          // "int" to distinguishes from prefix
+    Vector temp(*this);                                   // save the current state
+    ++(*this);                                            // use prefix increase 
+    return temp;                                          // return old state
 }
 
 // Prefix decrement
-Vector& Vector::operator--() {
+Vector& Vector::operator--() {                            //similar to the prefix and postfix increasement
     for (int i = 0; i < mSize; ++i)
         --mData[i];
     return *this;
@@ -125,28 +125,28 @@ Vector Vector::operator--(int) {
     return temp;
 }
 
-// + operator
+// Vector addition operator (+ operator)
 Vector Vector::operator+(const Vector& other) const {
-    if (mSize != other.mSize) {
+    if (mSize != other.mSize) {                             //check the size of two vector                                 
         throw std::invalid_argument("Vector sizes do not match for addition");
-    }
-    Vector result(mSize);
-    for (int i = 0; i < mSize; ++i)
-        result.mData[i] = mData[i] + other.mData[i];
-    return result;
+    }                                                       // if the size is not same-->throw them
+    Vector result(mSize);                                   //create the new vector for result
+    for (int i = 0; i < mSize; ++i)                         //iterate each element
+        result.mData[i] = mData[i] + other.mData[i];        //add corresponding vector from both vectors
+    return result;                                          
 }
 
-// += operator
-Vector& Vector::operator+=(const Vector& other) {
-    if (mSize != other.mSize) {
+// Vector addition assignment operator(+= operator)
+Vector& Vector::operator+=(const Vector& other) {           
+    if (mSize != other.mSize) {                             //check the size of two vector 
         throw std::invalid_argument("Vector sizes do not match for addition");
-    }
-    for (int i = 0; i < mSize; ++i)
-        mData[i] += other.mData[i];
+    }                                                       // if the size is not same-->throw them
+    for (int i = 0; i < mSize; ++i)                         //iterate each element
+        mData[i] += other.mData[i];                         //add other vector to current vector
     return *this;
 }
 
-// - operator
+//Vector subtraction operator(- operator)
 Vector Vector::operator-(const Vector& other) const {
     assert(mSize == other.mSize);
     Vector result(mSize);
