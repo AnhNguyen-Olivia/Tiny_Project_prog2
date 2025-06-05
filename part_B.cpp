@@ -1,6 +1,5 @@
 #include <iostream>
 #include <fstream>
-#include <vector>
 #include <string>
 #include <sstream>
 #include <cmath>
@@ -293,29 +292,47 @@ ModelMetrics calculateMetrics(const Vector& predictions, const Vector& actual) {
     double sumSquaredError = 0.0;
     double sumAbsError = 0.0;
     double sumActual = 0.0;
-    double sumSquaredActual = 0.0;
     int n = predictions.getSize();
+    int validPredictions = 0;
     
-    for (int i = 0; i < n; ++i) {
-        double diff = predictions[i] - actual[i];
+    for (int i = 1; i <= n; ++i) {
+        // Skip NaN values
+        if (std::isnan(predictions(i)) || std::isnan(actual(i))) {
+            continue;
+        }
+        
+        double diff = predictions(i) - actual(i);
         sumSquaredError += diff * diff;
         sumAbsError += std::abs(diff);
-        sumActual += actual[i];
-        sumSquaredActual += actual[i] * actual[i];
+        sumActual += actual(i);
+        validPredictions++;
+    }
+    
+    // Prevent division by zero if all predictions are NaN
+    if (validPredictions == 0) {
+        metrics.rmse = std::numeric_limits<double>::quiet_NaN();
+        metrics.mae = std::numeric_limits<double>::quiet_NaN();
+        metrics.r2 = std::numeric_limits<double>::quiet_NaN();
+        return metrics;
     }
     
     // Calculate metrics
-    metrics.rmse = std::sqrt(sumSquaredError / n);
-    metrics.mae = sumAbsError / n;
+    metrics.rmse = std::sqrt(sumSquaredError / validPredictions);
+    metrics.mae = sumAbsError / validPredictions;
     
     // Calculate R-squared
-    double meanActual = sumActual / n;
+    double meanActual = sumActual / validPredictions;
     double totalSumSquares = 0.0;
-    for (int i = 0; i < n; ++i) {
-        totalSumSquares += std::pow(actual[i] - meanActual, 2);
+    for (int i = 1; i <= n; ++i) {
+        if (std::isnan(actual(i))) continue;
+        totalSumSquares += std::pow(actual(i) - meanActual, 2);
     }
     
-    metrics.r2 = 1.0 - (sumSquaredError / totalSumSquares);
+    if (totalSumSquares < 1e-10) {
+        metrics.r2 = 0.0;  // Prevent division by very small number
+    } else {
+        metrics.r2 = 1.0 - (sumSquaredError / totalSumSquares);
+    }
     
     return metrics;
 }
@@ -332,10 +349,41 @@ void printModelSummary(const Vector& coefficients,
     std::cout << std::string(40, '-') << std::endl;
     std::cout << std::setw(20) << "Metric" << std::setw(20) << "Value" << std::endl;
     std::cout << std::string(40, '-') << std::endl;
-    std::cout << CYAN << std::setw(20) << "RMSE:" << RESET << std::setw(20) << std::fixed << std::setprecision(4) << metrics.rmse << std::endl;
-    std::cout << CYAN << std::setw(20) << "MAE:" << RESET << std::setw(20) << std::fixed << std::setprecision(4) << metrics.mae << std::endl;
-    std::cout << CYAN << std::setw(20) << "R^2:" << RESET << std::setw(20) << std::fixed << std::setprecision(4) << metrics.r2 << std::endl;
+    
+    // Handle NaN values in metrics
+    if (std::isnan(metrics.rmse)) {
+        std::cout << CYAN << std::setw(20) << "RMSE:" << RESET << std::setw(20) << "Error" << std::endl;
+    } else {
+        std::cout << CYAN << std::setw(20) << "RMSE:" << RESET << std::setw(20) << std::fixed << std::setprecision(4) << metrics.rmse << std::endl;
+    }
+    
+    if (std::isnan(metrics.mae)) {
+        std::cout << CYAN << std::setw(20) << "MAE:" << RESET << std::setw(20) << "Error" << std::endl;
+    } else {
+        std::cout << CYAN << std::setw(20) << "MAE:" << RESET << std::setw(20) << std::fixed << std::setprecision(4) << metrics.mae << std::endl;
+    }
+    
+    if (std::isnan(metrics.r2)) {
+        std::cout << CYAN << std::setw(20) << "R^2:" << RESET << std::setw(20) << "Error" << std::endl;
+    } else {
+        std::cout << CYAN << std::setw(20) << "R^2:" << RESET << std::setw(20) << std::fixed << std::setprecision(4) << metrics.r2 << std::endl;
+    }
+    
     std::cout << std::string(40, '-') << std::endl << std::endl;
+    
+    // Check if coefficients contain NaN values
+    bool hasNaN = false;
+    for (int i = 1; i <= coefficients.getSize(); i++) {
+        if (std::isnan(coefficients(i))) {
+            hasNaN = true;
+            break;
+        }
+    }
+    
+    if (hasNaN) {
+        std::cout << RED << "[ERROR] " << RESET << "Model coefficients contain NaN values. Unable to display model details." << std::endl;
+        return;
+    }
     
     // Print coefficients
     std::cout << BOLD << "Model Coefficients (Normalized Scale):" << RESET << std::endl;
@@ -440,6 +488,276 @@ void compareMethodsTable(const std::vector<ModelMetrics>& allMetrics, const std:
               << allMetrics[bestIndex].rmse << RESET << std::endl;
 }
 
+// Function to expand features with transformations and interactions
+Matrix expandFeatures(const std::vector<DataEntry>& data, bool addInteractions = true, 
+                     bool addPolynomials = true, bool addLog = true) {
+    int baseFeatures = 7; // intercept + 6 original features
+    int extraFeatures = 0;
+    
+    // Count additional features
+    if (addPolynomials) extraFeatures += 6; // squared terms
+    if (addLog) extraFeatures += 6; // log transforms
+    if (addInteractions) extraFeatures += 15; // 6 choose 2 = 15 interaction terms
+    
+    int totalFeatures = baseFeatures + extraFeatures;
+    Matrix X(data.size(), totalFeatures);
+    
+    // Fill the matrix with data
+    for (size_t i = 0; i < data.size(); ++i) {
+        const auto& entry = data[i];
+        int col = 1;
+        
+        // Base features (always included)
+        X(i+1, col++) = 1.0;  // Intercept
+        X(i+1, col++) = entry.MYCT;
+        X(i+1, col++) = entry.MMIN;
+        X(i+1, col++) = entry.MMAX;
+        X(i+1, col++) = entry.CACH;
+        X(i+1, col++) = entry.CHMIN;
+        X(i+1, col++) = entry.CHMAX;
+        
+        // Add polynomial terms (squared features)
+        if (addPolynomials) {
+            X(i+1, col++) = entry.MYCT * entry.MYCT;
+            X(i+1, col++) = entry.MMIN * entry.MMIN;
+            X(i+1, col++) = entry.MMAX * entry.MMAX;
+            X(i+1, col++) = entry.CACH * entry.CACH;
+            X(i+1, col++) = entry.CHMIN * entry.CHMIN;
+            X(i+1, col++) = entry.CHMAX * entry.CHMAX;
+        }
+        
+        // Add log transforms (add small constant to avoid log(0))
+        if (addLog) {
+            X(i+1, col++) = std::log(entry.MYCT + 1.0);
+            X(i+1, col++) = std::log(entry.MMIN + 1.0);
+            X(i+1, col++) = std::log(entry.MMAX + 1.0);
+            X(i+1, col++) = std::log(entry.CACH + 1.0);
+            X(i+1, col++) = std::log(entry.CHMIN + 1.0);
+            X(i+1, col++) = std::log(entry.CHMAX + 1.0);
+        }
+        
+        // Add interaction terms
+        if (addInteractions) {
+            X(i+1, col++) = entry.MYCT * entry.MMIN;
+            X(i+1, col++) = entry.MYCT * entry.MMAX;
+            X(i+1, col++) = entry.MYCT * entry.CACH;
+            X(i+1, col++) = entry.MYCT * entry.CHMIN;
+            X(i+1, col++) = entry.MYCT * entry.CHMAX;
+            X(i+1, col++) = entry.MMIN * entry.MMAX;
+            X(i+1, col++) = entry.MMIN * entry.CACH;
+            X(i+1, col++) = entry.MMIN * entry.CHMIN;
+            X(i+1, col++) = entry.MMIN * entry.CHMAX;
+            X(i+1, col++) = entry.MMAX * entry.CACH;
+            X(i+1, col++) = entry.MMAX * entry.CHMIN;
+            X(i+1, col++) = entry.MMAX * entry.CHMAX;
+            X(i+1, col++) = entry.CACH * entry.CHMIN;
+            X(i+1, col++) = entry.CACH * entry.CHMAX;
+            X(i+1, col++) = entry.CHMIN * entry.CHMAX;
+        }
+    }
+    
+    return X;
+}
+
+// Function to get feature names for the expanded feature matrix
+std::vector<std::string> getExpandedFeatureNames(bool addInteractions = true, 
+                                               bool addPolynomials = true,
+                                               bool addLog = true) {
+    std::vector<std::string> featureNames = {"Intercept", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX"};
+    std::vector<std::string> baseFeatures = {"MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX"};
+    
+    if (addPolynomials) {
+        for (const auto& name : baseFeatures) {
+            featureNames.push_back(name + "²");
+        }
+    }
+    
+    if (addLog) {
+        for (const auto& name : baseFeatures) {
+            featureNames.push_back("log(" + name + ")");
+        }
+    }
+    
+    if (addInteractions) {
+        for (size_t i = 0; i < baseFeatures.size(); ++i) {
+            for (size_t j = i + 1; j < baseFeatures.size(); ++j) {
+                featureNames.push_back(baseFeatures[i] + "*" + baseFeatures[j]);
+            }
+        }
+    }
+    
+    return featureNames;
+}
+
+// Function to detect and remove outliers using Z-score method
+std::vector<DataEntry> removeOutliers(const std::vector<DataEntry>& data, double threshold = 3.0) {
+    printHeader("OUTLIER DETECTION");
+    
+    // Calculate mean and std for each feature and the target
+    std::vector<double> means(7, 0.0), stdDevs(7, 0.0);
+    for (const auto& entry : data) {
+        std::vector<double> values = {entry.MYCT, entry.MMIN, entry.MMAX, 
+                                      entry.CACH, entry.CHMIN, entry.CHMAX, entry.PRP};
+        for (int i = 0; i < 7; ++i) {
+            means[i] += values[i];
+        }
+    }
+    
+    for (int i = 0; i < 7; ++i) {
+        means[i] /= data.size();
+    }
+    
+    for (const auto& entry : data) {
+        std::vector<double> values = {entry.MYCT, entry.MMIN, entry.MMAX, 
+                                      entry.CACH, entry.CHMIN, entry.CHMAX, entry.PRP};
+        for (int i = 0; i < 7; ++i) {
+            stdDevs[i] += std::pow(values[i] - means[i], 2);
+        }
+    }
+    
+    for (int i = 0; i < 7; ++i) {
+        stdDevs[i] = std::sqrt(stdDevs[i] / data.size());
+        if (stdDevs[i] == 0) stdDevs[i] = 1.0; // Avoid division by zero
+    }
+    
+    // Identify outliers
+    std::vector<bool> isOutlier(data.size(), false);
+    int outlierCount = 0;
+    
+    for (size_t i = 0; i < data.size(); ++i) {
+        std::vector<double> values = {data[i].MYCT, data[i].MMIN, data[i].MMAX, 
+                                     data[i].CACH, data[i].CHMIN, data[i].CHMAX, data[i].PRP};
+        for (int j = 0; j < 7; ++j) {
+            double zScore = std::abs((values[j] - means[j]) / stdDevs[j]);
+            if (zScore > threshold) {
+                isOutlier[i] = true;
+                outlierCount++;
+                break;
+            }
+        }
+    }
+    
+    // Copy non-outlier data
+    std::vector<DataEntry> cleanedData;
+    cleanedData.reserve(data.size() - outlierCount);
+    
+    for (size_t i = 0; i < data.size(); ++i) {
+        if (!isOutlier[i]) {
+            cleanedData.push_back(data[i]);
+        }
+    }
+    
+    std::cout << GREEN << "[SUCCESS] " << RESET << "Identified " << BOLD << outlierCount 
+              << RESET << " outliers (" << std::fixed << std::setprecision(1) 
+              << (100.0 * outlierCount / data.size()) << "% of data)" << std::endl;
+    std::cout << "Retained " << BOLD << cleanedData.size() << RESET << " data points" << std::endl;
+    
+    return cleanedData;
+}
+
+// Function to find optimal lambda for Tikhonov regularization using k-fold cross-validation
+double findOptimalLambda(const Matrix& A, const Vector& b, int kFolds = 5) {
+    printHeader("REGULARIZATION PARAMETER TUNING");
+    
+    std::vector<double> lambdaValues = {0.001, 0.01, 0.1, 0.5, 1.0, 5.0, 10.0, 50.0, 100.0};
+    std::vector<double> avgRmseValues(lambdaValues.size(), 0.0);
+    
+    int n = A.GetNumRows();
+    int foldSize = n / kFolds;
+    
+    std::cout << "Performing " << kFolds << "-fold cross-validation to find optimal lambda..." << std::endl;
+    
+    // Create random indices for shuffling
+    std::vector<int> indices(n);
+    for (int i = 0; i < n; ++i) indices[i] = i + 1;
+    
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(indices.begin(), indices.end(), g);
+    
+    // Run cross-validation for each lambda value
+    for (size_t l = 0; l < lambdaValues.size(); ++l) {
+        double lambda = lambdaValues[l];
+        double totalRmse = 0.0;
+        
+        std::cout << "Testing lambda = " << lambda << " ";
+        
+        // K-fold cross validation
+        for (int fold = 0; fold < kFolds; ++fold) {
+            // Create training and validation sets
+            int validStartIdx = fold * foldSize + 1;
+            int validEndIdx = (fold == kFolds - 1) ? n : (fold + 1) * foldSize;
+            
+            Matrix trainA(n - (validEndIdx - validStartIdx + 1), A.GetNumCols());
+            Vector trainB(n - (validEndIdx - validStartIdx + 1));
+            Matrix validA(validEndIdx - validStartIdx + 1, A.GetNumCols());
+            Vector validB(validEndIdx - validStartIdx + 1);
+            
+            // Fill train/valid matrices
+            int trainRow = 1, validRow = 1;
+            for (int i = 1; i <= n; ++i) {
+                int idx = indices[i-1];
+                if (i >= validStartIdx && i <= validEndIdx) {
+                    // Add to validation set
+                    for (int j = 1; j <= A.GetNumCols(); ++j) {
+                        validA(validRow, j) = A(idx, j);
+                    }
+                    validB(validRow) = b(idx);
+                    validRow++;
+                } else {
+                    // Add to training set
+                    for (int j = 1; j <= A.GetNumCols(); ++j) {
+                        trainA(trainRow, j) = A(idx, j);
+                    }
+                    trainB(trainRow) = b(idx);
+                    trainRow++;
+                }
+            }
+            
+            // Train model on training set
+            NonSquareLinearSystem solver(trainA, trainB);
+            Vector coef = solver.SolveWithTikhonov(lambda);
+            
+            // Test on validation set
+            Vector predictions(validB.getSize());
+            for (int i = 1; i <= validB.getSize(); ++i) {
+                predictions(i) = 0;
+                for (int j = 1; j <= A.GetNumCols(); ++j) {
+                    predictions(i) += coef(j) * validA(i, j);
+                }
+            }
+            
+            // Calculate RMSE
+            double rmse = 0.0;
+            for (int i = 1; i <= validB.getSize(); ++i) {
+                rmse += std::pow(predictions(i) - validB(i), 2);
+            }
+            rmse = std::sqrt(rmse / validB.getSize());
+            totalRmse += rmse;
+            
+            std::cout << ".";
+            std::cout.flush();
+        }
+        
+        avgRmseValues[l] = totalRmse / kFolds;
+        std::cout << " Avg RMSE: " << std::fixed << std::setprecision(4) << avgRmseValues[l] << std::endl;
+    }
+    
+    // Find best lambda
+    int bestIdx = 0;
+    for (size_t i = 1; i < lambdaValues.size(); ++i) {
+        if (avgRmseValues[i] < avgRmseValues[bestIdx]) {
+            bestIdx = i;
+        }
+    }
+    
+    double bestLambda = lambdaValues[bestIdx];
+    std::cout << GREEN << "[SUCCESS] " << RESET << "Optimal lambda: " << BOLD << bestLambda 
+              << RESET << " (CV RMSE: " << avgRmseValues[bestIdx] << ")" << std::endl;
+    
+    return bestLambda;
+}
+
 int main() {
     displayVersionInfo();
     auto startTime = std::chrono::high_resolution_clock::now();
@@ -451,6 +769,9 @@ int main() {
         return 1;
     }
     
+    // Use more conservative outlier removal
+    data = removeOutliers(data, 4.0); // Use more lenient Z-score threshold
+    
     // Use z-score normalization (mean=0, std=1)
     auto normParams = normalizeData(data, false);
     
@@ -458,23 +779,25 @@ int main() {
     std::vector<DataEntry> trainData, testData;
     trainTestSplit(data, trainData, testData);
 
-    // Build matrix A and vector b for training
     printHeader("MODEL BUILDING");
     std::cout << "Creating linear system from training data..." << std::endl;
     
-    Matrix A(trainData.size(), 7); // 7 columns (intercept + 6 features)
-    Vector b(trainData.size());
+    // Create standard feature matrix - avoid the complex transformations that cause instability
+    Matrix trainX(trainData.size(), 7);  // 7 columns: intercept + 6 features
+    Vector trainY(trainData.size());
     
     for (size_t i = 0; i < trainData.size(); ++i) {
-        const auto& entry = trainData[i];
-        A(i+1, 1) = 1.0;  // Intercept term
-        A(i+1, 2) = entry.MYCT;
-        A(i+1, 3) = entry.MMIN;
-        A(i+1, 4) = entry.MMAX;
-        A(i+1, 5) = entry.CACH;
-        A(i+1, 6) = entry.CHMIN;
-        A(i+1, 7) = entry.CHMAX;
-        b(i+1) = entry.PRP;  // Use 1-based indexing with () operator
+        // Fill the feature matrix with the basic features
+        trainX(i+1, 1) = 1.0;  // Intercept
+        trainX(i+1, 2) = trainData[i].MYCT;
+        trainX(i+1, 3) = trainData[i].MMIN;
+        trainX(i+1, 4) = trainData[i].MMAX;
+        trainX(i+1, 5) = trainData[i].CACH;
+        trainX(i+1, 6) = trainData[i].CHMIN;
+        trainX(i+1, 7) = trainData[i].CHMAX;
+        
+        // Target variable
+        trainY(i+1) = trainData[i].PRP;
     }
 
     // Vectors to store results from multiple methods
@@ -484,7 +807,7 @@ int main() {
 
     // METHOD 1: Solve using Pseudo-Inverse
     std::cout << "Solving linear system with pseudo-inverse method..." << std::endl;
-    NonSquareLinearSystem solver(A, b);
+    NonSquareLinearSystem solver(trainX, trainY);
     Vector coefficients_pseudoinv = solver.SolveWithPseudoInverse();
     std::cout << GREEN << "[SUCCESS] " << RESET << "Pseudo-inverse solution calculated" << std::endl;
     allCoefficients.push_back(coefficients_pseudoinv);
@@ -492,16 +815,16 @@ int main() {
 
     // METHOD 2: Solve using Normal Equations + Gaussian elimination
     std::cout << "Solving linear system with normal equations..." << std::endl;
-    Matrix AtA = A.Transpose() * A;
-    Vector Atb = A.Transpose() * b;
+    Matrix AtA = trainX.Transpose() * trainX;
+    Vector Atb = trainX.Transpose() * trainY;
     Vector coefficients_gaussian = gaussianElimination(AtA, Atb);
     std::cout << GREEN << "[SUCCESS] " << RESET << "Gaussian elimination solution calculated" << std::endl;
     allCoefficients.push_back(coefficients_gaussian);
     methodNames.push_back("Normal Equations");
 
-    // METHOD 3: Solve using Tikhonov regularization (ridge regression)
+    // METHOD 3: Solve using Tikhonov regularization with fixed lambda
     std::cout << "Solving linear system with Tikhonov regularization (lambda=0.1)..." << std::endl;
-    Vector coefficients_tikhonov = solver.SolveWithTikhonov(0.1);
+    Vector coefficients_tikhonov = solver.SolveWithTikhonov(0.1); // Use fixed lambda instead of optimized
     std::cout << GREEN << "[SUCCESS] " << RESET << "Tikhonov regularization solution calculated" << std::endl;
     allCoefficients.push_back(coefficients_tikhonov);
     methodNames.push_back("Tikhonov Regularization");
@@ -510,31 +833,37 @@ int main() {
     printHeader("MODEL EVALUATION");
     std::cout << "Evaluating all methods on test set..." << std::endl;
     
-    // Create test matrices/vectors
-    Vector testActual(testData.size());
-    std::vector<Vector> testPredictions;
+    // Create test feature matrix (with same structure as training)
+    Matrix testX(testData.size(), 7);
+    Vector testY(testData.size());
+    
+    for (size_t i = 0; i < testData.size(); ++i) {
+        testX(i+1, 1) = 1.0;  // Intercept
+        testX(i+1, 2) = testData[i].MYCT;
+        testX(i+1, 3) = testData[i].MMIN;
+        testX(i+1, 4) = testData[i].MMAX;
+        testX(i+1, 5) = testData[i].CACH;
+        testX(i+1, 6) = testData[i].CHMIN;
+        testX(i+1, 7) = testData[i].CHMAX;
+        testY(i+1) = testData[i].PRP;
+    }
     
     // Evaluate each method
+    std::vector<Vector> testPredictions;
     for (size_t method = 0; method < allCoefficients.size(); method++) {
         Vector predictions(testData.size());
         
-        for (size_t i = 0; i < testData.size(); ++i) {
-            const auto& entry = testData[i];
-            if (method == 0) testActual[i] = entry.PRP; // Only need to do this once
-            
-            // Calculate prediction with current method's coefficients
-            double prediction = allCoefficients[method](1) + // Intercept
-                            allCoefficients[method](2) * entry.MYCT +
-                            allCoefficients[method](3) * entry.MMIN +
-                            allCoefficients[method](4) * entry.MMAX +
-                            allCoefficients[method](5) * entry.CACH +
-                            allCoefficients[method](6) * entry.CHMIN +
-                            allCoefficients[method](7) * entry.CHMAX;
-            predictions[i] = prediction;
+        // Make predictions
+        for (int i = 1; i <= testData.size(); ++i) {
+            predictions(i) = 0.0;
+            for (int j = 1; j <= testX.GetNumCols(); ++j) {
+                predictions(i) += allCoefficients[method](j) * testX(i, j);
+            }
         }
         
         testPredictions.push_back(predictions);
-        allMetrics.push_back(calculateMetrics(predictions, testActual));
+        ModelMetrics metrics = calculateMetrics(predictions, testY);
+        allMetrics.push_back(metrics);
     }
 
     std::cout << GREEN << "[SUCCESS] " << RESET << "Model evaluation complete" << std::endl;
@@ -542,7 +871,7 @@ int main() {
     // Display comparison of all methods
     compareMethodsTable(allMetrics, methodNames);
     
-    // Display detailed results for best method (lowest RMSE)
+    // Find best method by lowest RMSE
     size_t bestIndex = 0;
     for (size_t i = 1; i < allMetrics.size(); i++) {
         if (allMetrics[i].rmse < allMetrics[bestIndex].rmse) {
