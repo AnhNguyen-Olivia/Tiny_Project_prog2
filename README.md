@@ -18,7 +18,7 @@ This project, developed as part of Programming 2 (CS-2023), implements a foundat
 2. **Build the project:**
 
    ```bash
-   g++ part_B.cpp matrix.cpp vector.cpp linearSystem.cpp nonSquareLinearSystem.cpp -o part_B -std=c++11
+      g++ vector.cpp matrix.cpp part_B.cpp linearSystem.cpp nonSquareLinearSystem.cpp -o part_B -std=c++11
    ```
 
 3. **Run the program:**
@@ -37,11 +37,46 @@ This project, developed as part of Programming 2 (CS-2023), implements a foundat
   Test RMSE: 151.09
   ````
 
-5. **Test cases:**
+1. **Testcase:**
+  The project include several test cases:
+    - **Vector Class**:
 
-   The project includes test cases for the vector and matrix classes, as well as the linear system solver. You can run these tests by executing the `part_B` program, which will automatically run the tests and display the results.
+      ```bash
+      g++ matrix.cpp vector.cpp linearSystem.cpp nonSquareLinearSystem.cpp test_vector.cpp -o test_vector -std=c++11
+      ./test_vector
+      ```
 
----
+    - **Matrix Class**:
+
+      ```bash
+      g++ vector.cpp matrix.cpp linearSystem.cpp nonSquareLinearSystem.cpp test_matrix.cpp -o test_matrix -std=c++11
+      ./matrix_test
+      ```
+
+    - **Linear System Class**:
+  
+      ```bash
+      g++ vector.cpp matrix.cpp linearSystem.cpp nonSquareLinearSystem.cpp test_nonSquareLinearSystem.cpp -o test_nonSquare -std=c++1
+      ./test_linear
+      ```
+
+    - **Non-Square Linear System Class**:
+
+      ```bash
+      g++ vector.cpp matrix.cpp linearSystem.cpp nonSquareLinearSystem.cpp test_non_square_linear.cpp -o test_non_square_linear -std=c++11
+      ./test_nonSquare
+      ```
+
+    - **Part B**:
+
+      ```bash
+      g++ matrix.cpp vector.cpp linearSystem.cpp nonSquareLinearSystem.cpp test_part_B.cpp -o test_part_B -std=c++11
+      ./test_part_B
+      ```
+
+    ```bash
+
+      ````
 
 ## Part A: Linear Algebra System
 
