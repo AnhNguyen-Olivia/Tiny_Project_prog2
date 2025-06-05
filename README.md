@@ -38,12 +38,15 @@ This project, developed as part of Programming 2 (CS-2023), implements a foundat
   ````
 
 1. **Testcase:**
-  The project include several test cases:
+  The project includes several test cases:
     - **Vector Class**:
 
       ```bash
       g++ matrix.cpp vector.cpp linearSystem.cpp nonSquareLinearSystem.cpp test_vector.cpp -o test_vector -std=c++11
       ./test_vector
+
+
+       
       ```
 
     - **Matrix Class**:
@@ -56,14 +59,14 @@ This project, developed as part of Programming 2 (CS-2023), implements a foundat
     - **Linear System Class**:
   
       ```bash
-      g++ vector.cpp matrix.cpp linearSystem.cpp nonSquareLinearSystem.cpp test_nonSquareLinearSystem.cpp -o test_nonSquare -std=c++1
+      g++ vector.cpp matrix.cpp linearSystem.cpp nonSquareLinearSystem.cpp test_linear.cpp -o test_linear -std=c++11
       ./test_linear
       ```
 
     - **Non-Square Linear System Class**:
 
       ```bash
-      g++ vector.cpp matrix.cpp linearSystem.cpp nonSquareLinearSystem.cpp test_non_square_linear.cpp -o test_non_square_linear -std=c++11
+      g++ vector.cpp matrix.cpp linearSystem.cpp nonSquareLinearSystem.cpp test_nonSquareLinearSystem.cpp -o test_nonSquare -std=c++1
       ./test_nonSquare
       ```
 
