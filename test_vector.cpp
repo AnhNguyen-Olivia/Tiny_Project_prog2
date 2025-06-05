@@ -37,7 +37,7 @@ private:
     }
 
     void runTest(const string& testName, function<bool()> testFunction) {
-        const int RESULT_COL = 60; // Column where PASS/FAIL should start
+        const int RESULT_COL = 60; // Column where PASSED/FAILED should start
         totalTests++;
 
         // Format test ID
@@ -58,15 +58,15 @@ private:
         try {
             bool result = testFunction();
             if (result) {
-                cout << GREEN << "PASS" << RESET << endl;
+                cout << GREEN << "PASSED" << RESET << endl;
                 passedTests++;
             } else {
-                cout << RED << "FAIL" << RESET << endl;
+                cout << RED << "FAILED" << RESET << endl;
             }
         } catch (const exception& e) {
             cout << YELLOW << "WARN" << RESET << " (" << e.what() << ")" << endl;
         } catch (...) {
-            cout << RED << "FAIL" << RESET << " (Unknown exception)" << endl;
+            cout << RED << "FAILED" << RESET << " (Unknown exception)" << endl;
         }
     }
 
@@ -75,8 +75,17 @@ private:
         const string VERSION = "v1.0";
         auto now = chrono::system_clock::now();
         time_t now_c = chrono::system_clock::to_time_t(now);
-        tm local_tm;
-        localtime_s(&local_tm, &now_c);
+        tm local_tm = {};
+        
+        // Platform-specific time conversion
+        #if defined(_WIN32) || defined(_WIN64)
+            // Windows uses localtime_s with reversed parameter order
+            localtime_s(&local_tm, &now_c);
+        #else
+            // POSIX systems use localtime_r
+            localtime_r(&now_c, &local_tm);
+        #endif
+        
         char timebuf[32];
         strftime(timebuf, sizeof(timebuf), "%Y-%m-%d  %H:%M:%S", &local_tm);
 
@@ -88,10 +97,8 @@ private:
 
 public:
     // Helper to print section headers in the test output
-    void printSectionHeader(const std::string& sectionName) {
-        cout << "\n" << string(40, '-') << endl;
-        cout << sectionName << endl;
-        cout << string(40, '-') << endl;
+    void printSectionHeader(const string& sectionName) {
+        cout << "\n=== " << sectionName << " ===" << endl;
     }
 
     void testConstructors() {
@@ -416,9 +423,9 @@ public:
              << "%)" << endl;
         cout << "  Tests failed: " << setw(3) << (totalTests - passedTests) << endl;
         if (passedTests == totalTests) {
-            cout << GREEN << "  ALL TESTS PASSED" << RESET << endl;
+            cout << GREEN << "  ALL TESTS ARE PASSED" << RESET << endl;
         } else {
-            cout << RED << "  SOME TESTS FAILED" << RESET << endl;
+            cout << RED << "  SOME TESTS ARE FAILED" << RESET << endl;
         }
         cout << string(50, '=') << RESET << endl;
     }

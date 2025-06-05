@@ -9,6 +9,7 @@
 #include <string>
 #include <cmath>
 #include <functional>
+#include <chrono> // For timestamp
 
 using namespace std;
 
@@ -76,7 +77,32 @@ private:
         }
     }
 
-    void printSectionHeader(const string& sectionName) {
+    void printSuiteHeader() {
+        // Version and timestamp
+        const string VERSION = "v1.0";
+        auto now = chrono::system_clock::now();
+        time_t now_c = chrono::system_clock::to_time_t(now);
+        tm local_tm = {};
+        
+        // Platform-specific time conversion
+        #if defined(_WIN32) || defined(_WIN64)
+            // Windows uses localtime_s with reversed parameter order
+            localtime_s(&local_tm, &now_c);
+        #else
+            // POSIX systems use localtime_r
+            localtime_r(&now_c, &local_tm);
+        #endif
+        
+        char timebuf[32];
+        strftime(timebuf, sizeof(timebuf), "%Y-%m-%d  %H:%M:%S", &local_tm);
+
+        cout << "\n" << string(70, '=') << RESET << endl;
+        cout << "   NON-SQUARE LINEAR SYSTEM TEST SUITE " << VERSION << endl;
+        cout << "   Run date: " << timebuf << endl;
+        cout << string(70, '=') << RESET << endl;
+    }
+
+        void printSectionHeader(const string& sectionName) {
         const int WIDTH = 70;
         string centered = sectionName;
         int pad = (WIDTH - centered.length()) / 2;
@@ -344,10 +370,7 @@ public:
     }
     
     void runAllTests() {
-        cout << "\n" << string(70, '=') << endl;
-        cout << "           NON-SQUARE LINEAR SYSTEM TEST SUITE" << endl;
-        cout << string(70, '=') << endl;
-
+        printSuiteHeader();
         testConstructor();
         testOverdeterminedSystem();
         testUnderdeterminedSystem();

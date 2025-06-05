@@ -96,7 +96,7 @@ This project, developed as part of Programming 2 (CS-2023), implements a foundat
 - **Private Members**
   - `mSize`: Size of the array
   - `mData`: Pointer to data elements
-- **Additionial Vector Function**
+- **Additional Vector Function**
   - toMatrix: Convert a vector to a matrix (needed in part A.4)
 
 ---
@@ -123,7 +123,7 @@ This project, developed as part of Programming 2 (CS-2023), implements a foundat
   - Pseudo-inverse (Moore-Penrose inverse)
 - **Additional Matrix Functions**
   - Square: Check the square property of a matrix (needed in part A.3)
-  - Symmertric: Check the symmetric property of a matrix (needed in part A.3)
+  - Symmetric: Check the symmetric property of a matrix (needed in part A.3)
 
 ---
 
