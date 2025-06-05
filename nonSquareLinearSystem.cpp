@@ -8,7 +8,7 @@ NonSquareLinearSystem::NonSquareLinearSystem(const Matrix& A, const Vector& b)
 }
 
 Vector NonSquareLinearSystem::SolveWithPseudoInverse() const {
-    if (_A.GetNumRows() >= _A.GetNumCols()) {
+    if (_A.GetNumRows() > _A.GetNumCols()) {
         // Over-determined: x = (A^T A)^-1 A^T b
         Matrix A_T = _A.Transpose();
         Matrix ATA = A_T * _A;
@@ -27,7 +27,7 @@ Vector NonSquareLinearSystem::SolveWithPseudoInverse() const {
 
 Vector NonSquareLinearSystem::SolveWithTikhonov(double lambda) const {
     Matrix A_T = _A.Transpose();
-    if (_A.GetNumRows() >= _A.GetNumCols()) { // Over-determined
+    if (_A.GetNumRows() > _A.GetNumCols()) { // Over-determined
         Matrix regularized = A_T * _A + Matrix::IdentityMatrix(_A.GetNumCols()) * lambda;
         Vector rhs = A_T * _b;
         LinearSystem ls(regularized, rhs);
