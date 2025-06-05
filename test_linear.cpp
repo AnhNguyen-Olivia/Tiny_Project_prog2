@@ -8,6 +8,8 @@
 #include <string>
 #include <cmath>
 #include <functional>
+#include <chrono>
+#include <ctime>
 
 using namespace std;
 
@@ -15,7 +17,14 @@ class LinearSystemTestSuite {
 private:
     int totalTests = 0;
     int passedTests = 0;
+    int testCounter = 1; // For test IDs
     const double EPSILON = 1e-6;  // For floating point comparisons
+
+    // ANSI color codes for output
+    const string GREEN = "\033[32m";
+    const string RED = "\033[31m";
+    const string YELLOW = "\033[33m";
+    const string RESET = "\033[0m";
 
     bool almostEqual(double a, double b) const {
         return fabs(a - b) < EPSILON;
@@ -43,22 +52,53 @@ private:
     };
 
     void runTest(const string& testName, TestFunction& testFunction) {
+        const int RESULT_COL = 60; // Column where PASSED/FAILED should start
         totalTests++;
-        cout << "  Testing: " << left << setw(50) << testName << " ... ";
-        
+
+        // Format test ID
+        ostringstream idStream;
+        idStream << "[T" << setw(2) << setfill('0') << testCounter++ << "]";
+        string testID = idStream.str();
+
+        // Print test ID and name together
+        cout << "  " << testID << "  " << testName;
+
+        // Calculate and print dots
+        int currentLength = 2 + testID.length() + 2 + testName.length(); // 2 for "  ", 2 for "  "
+        int dots = RESULT_COL - currentLength;
+        if (dots < 3) dots = 3;
+        cout << string(dots, '.');
+
+        // Result
         try {
             bool result = testFunction();
             if (result) {
-                cout << "PASSED" << endl;
+                cout << GREEN << "PASSED" << RESET << endl;
                 passedTests++;
             } else {
-                cout << "FAILED" << endl;
+                cout << RED << "FAILED" << RESET << endl;
             }
         } catch (const exception& e) {
-            cout << "EXCEPTION: " << e.what() << endl;
+            cout << YELLOW << "WARN" << RESET << " (" << e.what() << ")" << endl;
         } catch (...) {
-            cout << "UNKNOWN EXCEPTION" << endl;
+            cout << RED << "FAILED" << RESET << " (Unknown exception)" << endl;
         }
+    }
+
+    void printSuiteHeader() {
+        // Version and timestamp
+        const string VERSION = "v1.0";
+        auto now = chrono::system_clock::now();
+        time_t now_c = chrono::system_clock::to_time_t(now);
+        tm local_tm;
+        localtime_r(&now_c, &local_tm);
+        char timebuf[32];
+        strftime(timebuf, sizeof(timebuf), "%Y-%m-%d  %H:%M:%S", &local_tm);
+
+        cout << "\n" << string(50, '=') << RESET << endl;
+        cout << "Test Suite: MATRIX CLASS " << VERSION << endl;
+        cout << "Run date: " << timebuf << endl;
+        cout << string(50, '=') << RESET << endl;
     }
 
     void printSectionHeader(const string& sectionName) {
@@ -487,9 +527,7 @@ public:
     }
     
     void runAllTests() {
-        cout << "\n==============================================" << endl;
-        cout << "      LINEAR SYSTEM CLASS TEST SUITE" << endl;
-        cout << "==============================================" << endl;
+        printSuiteHeader();
         
         testBasicLinearSystem();
         testPosSymLinSystem();
@@ -497,14 +535,19 @@ public:
         testErrorHandling();
         
         // Print summary
-        cout << "\n==============================================" << endl;
-        cout << "TEST SUMMARY:" << endl;
-        cout << "  Total tests:  " << totalTests << endl;
-        cout << "  Tests passed: " << passedTests << " (" 
-             << fixed << setprecision(1) << (totalTests > 0 ? (100.0 * passedTests / totalTests) : 0) 
+        cout << "\n" << string(50, '=') << RESET << endl;
+        cout << "TEST SUMMARY:" << RESET << endl;
+        cout << "  Total tests : " << setw(3) << totalTests << endl;
+        cout << "  Tests passed: " << setw(3) << passedTests << " ("
+             << fixed << setprecision(1) << (totalTests > 0 ? (100.0 * passedTests / totalTests) : 0)
              << "%)" << endl;
-        cout << "  Tests failed: " << (totalTests - passedTests) << endl;
-        cout << "==============================================" << endl;
+        cout << "  Tests failed: " << setw(3) << (totalTests - passedTests) << endl;
+        if (passedTests == totalTests) {
+            cout << GREEN << "  ALL TESTS ARE PASSED" << RESET << endl;
+        } else {
+            cout << RED << "  SOME TESTS ARE FAILED" << RESET << endl;
+        }
+        cout << string(50, '=') << RESET << endl;
     }
 };
 
