@@ -90,13 +90,22 @@ private:
         const string VERSION = "v1.0";
         auto now = chrono::system_clock::now();
         time_t now_c = chrono::system_clock::to_time_t(now);
-        tm local_tm;
-        localtime_r(&now_c, &local_tm);
+        tm local_tm = {};
+        
+        // Platform-specific time conversion
+        #if defined(_WIN32) || defined(_WIN64)
+            // Windows uses localtime_s with reversed parameter order
+            localtime_s(&local_tm, &now_c);
+        #else
+            // POSIX systems use localtime_r
+            localtime_r(&now_c, &local_tm);
+        #endif
+        
         char timebuf[32];
         strftime(timebuf, sizeof(timebuf), "%Y-%m-%d  %H:%M:%S", &local_tm);
 
         cout << "\n" << string(50, '=') << RESET << endl;
-        cout << "Test Suite: MATRIX CLASS " << VERSION << endl;
+        cout << "Test Suite: LINEAR SYSTEM " << VERSION << endl;
         cout << "Run date: " << timebuf << endl;
         cout << string(50, '=') << RESET << endl;
     }
