@@ -209,5 +209,3 @@ Matrix Vector::ToMatrix() const {
         mat(i, 1) = (*this)(i);
     return mat;
 }
-
-
