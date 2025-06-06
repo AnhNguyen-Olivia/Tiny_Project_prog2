@@ -6,6 +6,82 @@ This project, developed as part of Programming 2 (CS-2023), implements a foundat
 
 ---
 
+## Guide: How to Use
+
+1. **Clone the repository:**
+
+   ```sh
+   git clone https://github.com/AnhNguyen-Olivia/Tiny_Project_prog2.git
+   cd Tiny_Project_prog2
+   ```
+
+2. **Build the project:**
+
+   ```bash
+      g++ vector.cpp matrix.cpp part_B.cpp linearSystem.cpp nonSquareLinearSystem.cpp -o part_B -std=c++11
+   ```
+
+3. **Run the program:**
+
+   ```bash
+   ./part_B
+   ```
+
+4. **Usage examples:**
+   The terminal should output the results of the linear regression model, including the coefficients and the RMSE of the predictions.
+
+  ```terminal
+  Coefficients:
+  [ -0.01, 0.02, 0.00, 0.76, 3.07, -0.20 ]
+
+  Test RMSE: 151.09
+  ````
+
+1. **Testcase:**
+  The project includes several test cases:
+    - **Vector Class**:
+
+      ```bash
+      g++ matrix.cpp vector.cpp linearSystem.cpp nonSquareLinearSystem.cpp test_vector.cpp -o test_vector -std=c++11
+      ./test_vector
+
+
+       
+      ```
+
+    - **Matrix Class**:
+
+      ```bash
+      g++ vector.cpp matrix.cpp linearSystem.cpp nonSquareLinearSystem.cpp test_matrix.cpp -o test_matrix -std=c++11
+      ./matrix_test
+      ```
+
+    - **Linear System Class**:
+  
+      ```bash
+      g++ vector.cpp matrix.cpp linearSystem.cpp nonSquareLinearSystem.cpp test_linear.cpp -o test_linear -std=c++11
+      ./test_linear
+      ```
+
+    - **Non-Square Linear System Class**:
+
+      ```bash
+      g++ vector.cpp matrix.cpp linearSystem.cpp nonSquareLinearSystem.cpp test_nonSquareLinearSystem.cpp -o test_nonSquare -std=c++1
+      ./test_nonSquare
+      ```
+
+    - **Part B**:
+
+      ```bash
+      g++ matrix.cpp vector.cpp linearSystem.cpp nonSquareLinearSystem.cpp test_part_B.cpp -o test_part_B -std=c++11
+      ./test_part_B
+      ```
+
+    ```bash
+
+      ````
+
+>>>>>>> 8026ec9bc316d759b0b247c45cdd7504e9bbeffd
 ## Part A: Linear Algebra System
 
 ### A.1: Vector Class
