@@ -170,6 +170,8 @@ Vector Vector::operator*(double scalar) const {
         result.mData[i] = mData[i] * scalar;
     return result;
 }
+
+// *= Scalar multiplication assignment operator
 Vector& Vector::operator*=(double scalar) {
     for (int i = 0; i < mSize; ++i)
         mData[i] *= scalar;
