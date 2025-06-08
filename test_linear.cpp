@@ -17,8 +17,8 @@ class LinearSystemTestSuite {
 private:
     int totalTests = 0;
     int passedTests = 0;
-    int testCounter = 1; // For test IDs
-    const double EPSILON = 1e-6;  // For floating point comparisons
+    int testCounter = 1;                            // For test IDs
+    const double EPSILON = 1e-6;                    // For floating point comparisons
 
     // ANSI color codes for output
     const string GREEN = "\033[32m";
