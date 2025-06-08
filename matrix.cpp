@@ -95,31 +95,28 @@ Matrix Matrix::Transpose() const {
 
 // Destructor
 Matrix::~Matrix() {
-    for (int i = 0; i < mNumRows; ++i) {
+    for (int i = 0; i < mNumRows; ++i) {                // Delete each row
         delete[] mData[i];
     }
-    delete[] mData;
+    delete[] mData;                                     // Delete the array of row pointers
 }
 
-// Assignment
+// Copy assignment operator
 Matrix& Matrix::operator=(const Matrix& other) {
-    if (this == &other) return *this;
- 
+    if (this == &other) return *this;                   // avoid self-assignment
     for (int i = 0; i < mNumRows; ++i)                  // Clean up
         delete[] mData[i];
     delete[] mData;
 
-    // Copy
-    mNumRows = other.mNumRows;
+    mNumRows = other.mNumRows;                          // copy dimensions
     mNumCols = other.mNumCols;
-    mData = new double*[mNumRows];
+    mData = new double*[mNumRows];                      //allocate new memory
     for (int i = 0; i < mNumRows; ++i) {
         mData[i] = new double[mNumCols];
-        for (int j = 0; j < mNumCols; ++j) {
+        for (int j = 0; j < mNumCols; ++j) {            //copy data element
             mData[i][j] = other.mData[i][j];
         }
     }
-
     return *this;
 }
 
@@ -133,7 +130,7 @@ double& Matrix::operator()(int i, int j) {
         throw std::out_of_range("Matrix indices out of bounds");
     }
     assert(i >= 1 && i <= mNumRows && j >= 1 && j <= mNumCols);
-    return mData[i - 1][j - 1];
+    return mData[i - 1][j - 1];                         //adjust to 0-based indexing
 }
 
 // Const access operator ()
@@ -142,7 +139,7 @@ const double& Matrix::operator()(int i, int j) const {
         throw std::out_of_range("Matrix indices out of bounds");
     }
     assert(i >= 1 && i <= mNumRows && j >= 1 && j <= mNumCols);
-    return mData[i - 1][j - 1];
+    return mData[i - 1][j - 1];                         //adjust to 0-based indexing
 }
 
 // + operator
@@ -151,20 +148,20 @@ Matrix Matrix::operator+(const Matrix& other) const {
         throw std::invalid_argument("Matrix dimensions must match for addition");
     }
     assert(mNumRows == other.mNumRows && mNumCols == other.mNumCols);
-    Matrix result(mNumRows, mNumCols);
+    Matrix result(mNumRows, mNumCols);                  //create result matrix
     for (int i = 0; i < mNumRows; ++i)
         for (int j = 0; j < mNumCols; ++j)
             result.mData[i][j] = mData[i][j] + other.mData[i][j];
     return result;
 }
 
-// - operator
+//Subtraction of two matrices (- operator)
 Matrix Matrix::operator-(const Matrix& other) const {
     if (mNumRows != other.mNumRows || mNumCols != other.mNumCols) {
         throw std::invalid_argument("Matrix dimensions must match for addition");
     }
     assert(mNumRows == other.mNumRows && mNumCols == other.mNumCols);
-    Matrix result(mNumRows, mNumCols);
+    Matrix result(mNumRows, mNumCols);                      //create result matrix
     for (int i = 0; i < mNumRows; ++i)
         for (int j = 0; j < mNumCols; ++j)
             result.mData[i][j] = mData[i][j] - other.mData[i][j];
@@ -173,7 +170,7 @@ Matrix Matrix::operator-(const Matrix& other) const {
 
 // * scalar
 Matrix Matrix::operator*(double scalar) const {
-    Matrix result(mNumRows, mNumCols);
+    Matrix result(mNumRows, mNumCols);                      //create result matrix
     for (int i = 0; i < mNumRows; ++i)
         for (int j = 0; j < mNumCols; ++j)
             result.mData[i][j] = mData[i][j] * scalar;
@@ -182,12 +179,12 @@ Matrix Matrix::operator*(double scalar) const {
 
 // * vector
 Vector Matrix::operator*(const Vector& vec) const {
-    assert(mNumCols == vec.getSize()); 
-    Vector result(mNumRows);
+    assert(mNumCols == vec.getSize());                      //ensure dimensions match
+    Vector result(mNumRows);                                //create result matrix
     for (int i = 0; i < mNumRows; ++i) {
         result[i] = 0.0;
         for (int j = 0; j < mNumCols; ++j)
-            result[i] += mData[i][j] * vec[j];
+            result[i] += mData[i][j] * vec[j];              //dot product
     }
     return result;
 }
@@ -202,7 +199,7 @@ Matrix Matrix::operator*(const Matrix& other) const {
         );
     }
     assert(mNumCols == other.mNumRows);
-    Matrix result(mNumRows, other.mNumCols);
+    Matrix result(mNumRows, other.mNumCols);                    //create result matrix
     for (int i = 0; i < mNumRows; ++i) {
         for (int j = 0; j < other.mNumCols; ++j) {
             result.mData[i][j] = 0.0;
@@ -215,7 +212,7 @@ Matrix Matrix::operator*(const Matrix& other) const {
 
 // Unary minus operator
 Matrix Matrix::operator-() const {
-    Matrix result(mNumRows, mNumCols);
+    Matrix result(mNumRows, mNumCols);                          //create result matrix
     for (int i = 0; i < mNumRows; ++i)
         for (int j = 0; j < mNumCols; ++j)
             result.mData[i][j] = -mData[i][j];
@@ -242,7 +239,7 @@ double Matrix::Determinant() const {
     }
     assert(mNumRows == mNumCols);
     int n = mNumRows;
-    if (n == 1) return mData[0][0];
+    if (n == 1) return mData[0][0];                     // Base cases
     if (n == 2) return mData[0][0] * mData[1][1] - mData[0][1] * mData[1][0];
     if (n == 3) {
         return mData[0][0] * (mData[1][1] * mData[2][2] - mData[1][2] * mData[2][1])
@@ -250,9 +247,9 @@ double Matrix::Determinant() const {
                 + mData[0][2] * (mData[1][0] * mData[2][1] - mData[1][1] * mData[2][0]);
     }
 
-    double det = 0.0;
+    double det = 0.0;                                   //recursive case: Laplace expansion
     for (int p = 0; p < n; ++p) {
-        Matrix subMat(n - 1, n - 1);
+        Matrix subMat(n - 1, n - 1);                    //submatrix for minor
         for (int i = 1; i < n; ++i) {
             int colIdx = 0;
             for (int j = 0; j < n; ++j) {
@@ -266,8 +263,8 @@ double Matrix::Determinant() const {
     return det;
 }
 
-Matrix Matrix::Inverse() const {
-    assert(mNumRows == mNumCols);
+Matrix Matrix::Inverse() const {                        //compute matrix inverse using cofactor method
+    assert(mNumRows == mNumCols);                       //must be square
     int n = mNumRows;
     double det = this->Determinant();
     const double EPS = 1e-12;
@@ -276,22 +273,22 @@ Matrix Matrix::Inverse() const {
     }
     assert(std::abs(det) > EPS && "Matrix is singular or nearly singular");
 
-    Matrix inv(n, n);
-    if (n == 1) {
+    Matrix inv(n, n);                                   //resulting inverse matrix
+    if (n == 1) {                                       //base case: 1x1
         inv.mData[0][0] = 1.0 / mData[0][0];
         return inv;
     }
-    if (n == 2) {
+    if (n == 2) {                                       //base case: 2x2
         inv.mData[0][0] =  mData[1][1] / det;
         inv.mData[0][1] = -mData[0][1] / det;
         inv.mData[1][0] = -mData[1][0] / det;
         inv.mData[1][1] =  mData[0][0] / det;
         return inv;
     }
-    // For n > 2, use cofactor expansion
-    for (int i = 0; i < n; ++i) {
+    
+    for (int i = 0; i < n; ++i) {                       //for n > 2, use cofactor expansion
         for (int j = 0; j < n; ++j) {
-            Matrix minor(n - 1, n - 1);
+            Matrix minor(n - 1, n - 1);                 //minor matrix
             int rowIdx = 0;
             for (int r = 0; r < n; ++r) {
                 if (r == i) continue;
@@ -304,18 +301,18 @@ Matrix Matrix::Inverse() const {
                 ++rowIdx;
             }
             double cofactor = ((i + j) % 2 == 0 ? 1 : -1) * minor.Determinant();
-            inv.mData[j][i] = cofactor / det; // Transpose for adjugate
+            inv.mData[j][i] = cofactor / det;           // Transpose for adjugate
         }
     }
     return inv;
 }
 
-bool Matrix::Symmetric() const {
-if (!Square()) return false;
+bool Matrix::Symmetric() const {                        //check if the matrix is symmetric
+if (!Square()) return false;                            //not square -> not symmetric
 for (int i = 0; i < mNumRows; i++) {
     for (int j = 0; j < i; j++) {
         if (mData[i][j] != mData[j][i]) {
-            return false;
+            return false;                               //found asymmetry
         }
     }
 }
