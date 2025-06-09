@@ -627,11 +627,9 @@ double findOptimalLambda(const Matrix& A, const Vector& b, int kFolds = 5) {
     const int n = A.GetNumRows();
     const int foldSize = n / kFolds;
 
-    // Create indices once
-    std::vector<int> indices(n);
+    std::vector<int> indices(n);                                    // Create indices once
     for (int i = 0; i < n; ++i) indices[i] = i + 1;
-
-    std::mt19937 g(42); // Fixed seed for reproducibility
+    std::mt19937 g(42);                                             // Fixed seed for reproducibility
     std::shuffle(indices.begin(), indices.end(), g);
     // Pre-allocate datasets to avoid repeated allocations
     Matrix trainA(n - foldSize, A.GetNumCols()); 
@@ -641,8 +639,7 @@ double findOptimalLambda(const Matrix& A, const Vector& b, int kFolds = 5) {
     NonSquareLinearSystem solver(trainA, trainB);
     for (size_t l = 0; l < lambdaValues.size(); ++l) {
         double lambda = lambdaValues[l];
-        double totalRmse = 0.0;
-        
+        double totalRmse = 0.0;        
         std::cout << "Testing lambda = " << lambda << " ";
         
         // K-fold cross validation
@@ -687,6 +684,9 @@ double findOptimalLambda(const Matrix& A, const Vector& b, int kFolds = 5) {
             std::cout << ".";
             std::cout.flush();
         }
+        avgRmseValues[l] = totalRmse / kFolds;
+        std::cout << " Avg RMSE: " << std::fixed << std::setprecision(4) << avgRmseValues[l] << std::endl;
+    }
 
     
     // Find best lambda
