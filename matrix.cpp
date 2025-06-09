@@ -138,4 +138,37 @@ const double& Matrix::operator()(int i, int j) const {
     assert(i >= 1 && i <= mNumRows && j >= 1 && j <= mNumCols);
     return mData[i - 1][j - 1];                         //adjust to 0-based indexing
 }
+// + operator
+Matrix Matrix::operator+(const Matrix& other) const {
+    if (mNumRows != other.mNumRows || mNumCols != other.mNumCols) {
+        throw std::invalid_argument("Matrix dimensions must match for addition");
+    }
+    assert(mNumRows == other.mNumRows && mNumCols == other.mNumCols);
+    Matrix result(mNumRows, mNumCols);                  //create result matrix
+    for (int i = 0; i < mNumRows; ++i)
+        for (int j = 0; j < mNumCols; ++j)
+            result.mData[i][j] = mData[i][j] + other.mData[i][j];
+    return result;
+}
 
+//Subtraction of two matrices (- operator)
+Matrix Matrix::operator-(const Matrix& other) const {
+    if (mNumRows != other.mNumRows || mNumCols != other.mNumCols) {
+        throw std::invalid_argument("Matrix dimensions must match for addition");
+    }
+    assert(mNumRows == other.mNumRows && mNumCols == other.mNumCols);
+    Matrix result(mNumRows, mNumCols);                      //create result matrix
+    for (int i = 0; i < mNumRows; ++i)
+        for (int j = 0; j < mNumCols; ++j)
+            result.mData[i][j] = mData[i][j] - other.mData[i][j];
+    return result;
+}
+
+// * scalar
+Matrix Matrix::operator*(double scalar) const {
+    Matrix result(mNumRows, mNumCols);                      //create result matrix
+    for (int i = 0; i < mNumRows; ++i)
+        for (int j = 0; j < mNumCols; ++j)
+            result.mData[i][j] = mData[i][j] * scalar;
+    return result;
+}
