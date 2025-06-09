@@ -172,3 +172,133 @@ Matrix Matrix::operator*(double scalar) const {
             result.mData[i][j] = mData[i][j] * scalar;
     return result;
 }
+
+// * vector
+Vector Matrix::operator*(const Vector& vec) const {
+    assert(mNumCols == vec.getSize());                      //ensure dimensions match
+    Vector result(mNumRows);                                //create result matrix
+    for (int i = 0; i < mNumRows; ++i) {
+        result[i] = 0.0;
+        for (int j = 0; j < mNumCols; ++j)
+            result[i] += mData[i][j] * vec[j];              //dot product
+    }
+    return result;
+}
+
+// * matrix
+Matrix Matrix::operator*(const Matrix& other) const {
+    if (mNumCols != other.mNumRows) {
+        throw std::invalid_argument(
+            "Matrix multiplication dimension mismatch: " +
+            std::to_string(mNumCols) + " != " + 
+            std::to_string(other.mNumRows)
+        );
+    }
+    assert(mNumCols == other.mNumRows);
+    Matrix result(mNumRows, other.mNumCols);                    //create result matrix
+    for (int i = 0; i < mNumRows; ++i) {
+        for (int j = 0; j < other.mNumCols; ++j) {
+            result.mData[i][j] = 0.0;
+            for (int k = 0; k < mNumCols; ++k)
+                result.mData[i][j] += mData[i][k] * other.mData[k][j];
+        }
+    }
+    return result;
+}
+
+// Unary minus operator
+Matrix Matrix::operator-() const {
+    Matrix result(mNumRows, mNumCols);                          //create result matrix
+    for (int i = 0; i < mNumRows; ++i)
+        for (int j = 0; j < mNumCols; ++j)
+            result.mData[i][j] = -mData[i][j];
+    return result;
+}
+
+// Print for debugging
+void Matrix::Print() const {
+    for (int i = 0; i < mNumRows; ++i) {
+        std::cout << "[ ";
+        for (int j = 0; j < mNumCols; ++j) {
+            std::cout << mData[i][j] << " ";
+        }
+        std::cout << "]\n";
+    }
+}
+
+double Matrix::Determinant() const {
+    if (!Square()) {
+        throw std::domain_error(
+            "Determinant only defined for square matrices (current: " +
+            std::to_string(mNumRows) + "x" + std::to_string(mNumCols) + ")"
+        );
+    }
+    assert(mNumRows == mNumCols);
+    int n = mNumRows;
+    if (n == 1) return mData[0][0];                     // Base cases
+    if (n == 2) return mData[0][0] * mData[1][1] - mData[0][1] * mData[1][0];
+    if (n == 3) {
+        return mData[0][0] * (mData[1][1] * mData[2][2] - mData[1][2] * mData[2][1])
+                - mData[0][1] * (mData[1][0] * mData[2][2] - mData[1][2] * mData[2][0])
+                + mData[0][2] * (mData[1][0] * mData[2][1] - mData[1][1] * mData[2][0]);
+    }
+
+    double det = 0.0;                                   //recursive case: Laplace expansion
+    for (int p = 0; p < n; ++p) {
+        Matrix subMat(n - 1, n - 1);                    //submatrix for minor
+        for (int i = 1; i < n; ++i) {
+            int colIdx = 0;
+            for (int j = 0; j < n; ++j) {
+                if (j == p) continue;
+                subMat.mData[i - 1][colIdx] = mData[i][j];
+                ++colIdx;
+            }
+        }
+        det += ((p % 2 == 0) ? 1 : -1) * mData[0][p] * subMat.Determinant();
+    }
+    return det;
+}
+
+Matrix Matrix::Inverse() const {                        //compute matrix inverse using cofactor method
+    assert(mNumRows == mNumCols);                       //must be square
+    int n = mNumRows;
+    double det = this->Determinant();
+    const double EPS = 1e-12;
+    if (std::abs(det) < EPS) {
+        throw std::runtime_error("Matrix is singular (determinant too small)");
+    }
+    assert(std::abs(det) > EPS && "Matrix is singular or nearly singular");
+
+    Matrix inv(n, n);                                   //resulting inverse matrix
+    if (n == 1) {                                       //base case: 1x1
+        inv.mData[0][0] = 1.0 / mData[0][0];
+        return inv;
+    }
+    if (n == 2) {                                       //base case: 2x2
+        inv.mData[0][0] =  mData[1][1] / det;
+        inv.mData[0][1] = -mData[0][1] / det;
+        inv.mData[1][0] = -mData[1][0] / det;
+        inv.mData[1][1] =  mData[0][0] / det;
+        return inv;
+    }
+    
+    for (int i = 0; i < n; ++i) {                       //for n > 2, use cofactor expansion
+        for (int j = 0; j < n; ++j) {
+            Matrix minor(n - 1, n - 1);                 //minor matrix
+            int rowIdx = 0;
+            for (int r = 0; r < n; ++r) {
+                if (r == i) continue;
+                int colIdx = 0;
+                for (int c = 0; c < n; ++c) {
+                    if (c == j) continue;
+                    minor.mData[rowIdx][colIdx] = mData[r][c];
+                    ++colIdx;
+                }
+                ++rowIdx;
+            }
+            double cofactor = ((i + j) % 2 == 0 ? 1 : -1) * minor.Determinant();
+            inv.mData[j][i] = cofactor / det;           // Transpose for adjugate
+        }
+    }
+    return inv;
+}
