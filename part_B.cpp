@@ -59,35 +59,31 @@ std::vector<DataEntry> loadData(const std::string& filename) {
     std::vector<DataEntry> data;                                // Vector to store loaded data
     std::ifstream file(filename);                               // Open file for reading
 
-    if (!file.is_open()) { // Check if file couldn't be opened
+    if (!file.is_open()) {                                      // Check if file couldn't be opened
         std::cerr << RED << "ERROR: Could not open file " << filename << RESET << std::endl;
-        return data; // Return empty data vector
+        return data;                                            // Return empty data vector
     }
 
     printHeader("DATA LOADING"); // Display loading header
     std::cout << "Source: " << CYAN << filename << RESET << std::endl; // Show source filename
+                                                                // Reserve initial capacity to avoid reallocations
+    data.reserve(1000);                                         // Preallocate space for performance
+    std::string line;                                           // To store each line of the file
+    int totalLines = 0;                                         // Count how many lines read
 
-    // Reserve initial capacity to avoid reallocations
-    data.reserve(1000); // Preallocate space for performance
-
-    std::string line; // To store each line of the file
-    int totalLines = 0; // Count how many lines read
-
-    while (std::getline(file, line)) { // Read file line by line
-        totalLines++; // Increment line count
-
-        // Show progress every 100 lines
-        if (totalLines % 100 == 0) {
+    while (std::getline(file, line)) {                          // Read file line by line
+        totalLines++;                                           // Increment line count                                                           
+        if (totalLines % 100 == 0) {                            // Show progress every 100 lines
             showProgressBar(totalLines, std::max(totalLines, 1000)); // Display progress bar
         }
 
-        std::stringstream ss(line); // Create stream from line
-        std::string token; // Temporary token for each CSV field
-        DataEntry entry; // New entry to store parsed data
+        std::stringstream ss(line);                             // Create stream from line
+        std::string token;                                      // Temporary token for each CSV field
+        DataEntry entry;                                        // New entry to store parsed data
 
         // Skip first two columns (non-predictive) - use getline directly
-        std::getline(ss, token, ','); // Skip first column
-        std::getline(ss, token, ','); // Skip second column
+        std::getline(ss, token, ',');                           // Skip first column
+        std::getline(ss, token, ',');                           // Skip second column
 
         // Read predictive features and target from the remaining columns
         std::getline(ss, token, ','); entry.MYCT = std::stod(token); // Convert and assign MYCT
@@ -98,51 +94,52 @@ std::vector<DataEntry> loadData(const std::string& filename) {
         std::getline(ss, token, ','); entry.CHMAX = std::stod(token); // Convert and assign CHMAX
         std::getline(ss, token, ','); entry.PRP = std::stod(token);   // Convert and assign PRP
 
-        data.push_back(entry); // Add entry to dataset
+        data.push_back(entry);                                      // Add entry to dataset
     }
 
-    showProgressBar(totalLines, totalLines); // Final call to show complete progress bar
+    showProgressBar(totalLines, totalLines);                        // Final call to show complete progress bar
     std::cout << GREEN << "[SUCCESS] " << RESET << "Loaded " << BOLD << data.size() 
-              << RESET << " data entries" << std::endl; // Report success and number of entries
-    return data; // Return loaded data
+              << RESET << " data entries" << std::endl;             // Report success and number of entries
+    return data;                                                    // Return loaded data
 }
 
-// Structure to hold normalization parameters
+// Structure to hold normalization parameters for each feature
 struct NormParams {
-    double mean;
-    double std;
-    double min;
-    double max;
+    double mean;  // Mean of the feature
+    double std;   // Standard deviation of the feature
+    double min;   // Minimum value of the feature
+    double max;   // Maximum value of the feature
 };
 
 // Function that implements Gaussian Elimination with partial pivoting
 Vector gaussianElimination(const Matrix& A, const Vector& b) {
-    int n = A.GetNumRows();
-    
-    // Create copies we can modify
+    int n = A.GetNumRows(); // Get size of the system
+
+    // Create modifiable copies of matrix A and vector b
     Matrix Acopy = A;
     Vector bcopy = b;
-    Vector x(n);
-    
-    // Forward elimination with partial pivoting
+    Vector x(n); // Solution vector
+
+    // Forward elimination process
     for (int k = 1; k <= n - 1; k++) {
-        // Find pivot
-        int maxRow = k;
-        double maxVal = std::abs(Acopy(k, k));
+        int maxRow = k; // Start with current row as max
+        double maxVal = std::abs(Acopy(k, k)); // Get pivot candidate
+
+        // Find the row with the largest value in current column (partial pivoting)
         for (int i = k + 1; i <= n; i++) {
             if (std::abs(Acopy(i, k)) > maxVal) {
                 maxVal = std::abs(Acopy(i, k));
                 maxRow = i;
             }
         }
-        
-        // Check for singularity
+
+        // If pivot is nearly zero, warn about singular matrix
         if (maxVal < 1e-10) {
             std::cerr << RED << "Warning: Matrix may be singular or ill-conditioned" << RESET << std::endl;
-            return x;
+            return x; // Return empty or partial solution
         }
-        
-        // Swap rows if needed
+
+        // Swap current row with row of maximum value
         if (maxRow != k) {
             for (int j = k; j <= n; j++) {
                 double temp = Acopy(k, j);
@@ -153,62 +150,66 @@ Vector gaussianElimination(const Matrix& A, const Vector& b) {
             bcopy(k) = bcopy(maxRow);
             bcopy(maxRow) = temp;
         }
-        
-        // Eliminate below
+
+        // Eliminate entries below the pivot
         for (int i = k + 1; i <= n; i++) {
-            double factor = Acopy(i, k) / Acopy(k, k);
+            double factor = Acopy(i, k) / Acopy(k, k); // Compute elimination factor
             for (int j = k; j <= n; j++) {
-                Acopy(i, j) -= factor * Acopy(k, j);
+                Acopy(i, j) -= factor * Acopy(k, j); // Subtract from row
             }
-            bcopy(i) -= factor * bcopy(k);
+            bcopy(i) -= factor * bcopy(k); // Update right-hand side
         }
     }
-    
-    // Back substitution
+
+    // Back substitution to solve upper-triangular system
     for (int i = n; i >= 1; i--) {
         double sum = 0.0;
         for (int j = i + 1; j <= n; j++) {
-            sum += Acopy(i, j) * x(j);
+            sum += Acopy(i, j) * x(j); // Sum known terms
         }
-        x(i) = (bcopy(i) - sum) / Acopy(i, i);
+        x(i) = (bcopy(i) - sum) / Acopy(i, i); // Solve for x(i)
     }
-    
-    return x;
+
+    return x; // Return solution vector
 }
 
 // Function to normalize a dataset with enhanced feedback
 std::vector<NormParams> normalizeData(std::vector<DataEntry>& data, bool useMaxNorm = false) {
-    printHeader("DATA NORMALIZATION");
-    
-    std::vector<NormParams> params(6); // 6 features
-    std::vector<double> sums(6, 0.0);
-    std::vector<double> sumSquares(6, 0.0);
-    std::vector<double> mins(6, std::numeric_limits<double>::max());
-    std::vector<double> maxs(6, std::numeric_limits<double>::lowest());
-    
-    // Calculate sums, mins and maxs
+    printHeader("DATA NORMALIZATION"); // Print visual section header
+
+    std::vector<NormParams> params(6); // 6 features in DataEntry
+    std::vector<double> sums(6, 0.0); // For computing means
+    std::vector<double> sumSquares(6, 0.0); // For computing variances
+    std::vector<double> mins(6, std::numeric_limits<double>::max()); // Initialize min values
+    std::vector<double> maxs(6, std::numeric_limits<double>::lowest()); // Initialize max values
+
+    // Iterate through all data entries
     for (const auto& entry : data) {
+        // Extract feature values
         std::vector<double> features = {
-            entry.MYCT, entry.MMIN, entry.MMAX, 
+            entry.MYCT, entry.MMIN, entry.MMAX,
             entry.CACH, entry.CHMIN, entry.CHMAX
         };
-        
+
+        // Accumulate statistics for each feature
         for (int i = 0; i < 6; i++) {
-            sums[i] += features[i];
-            sumSquares[i] += features[i] * features[i];
-            mins[i] = std::min(mins[i], features[i]);
-            maxs[i] = std::max(maxs[i], features[i]);
+            sums[i] += features[i];                    // Sum for mean
+            sumSquares[i] += features[i] * features[i]; // Sum of squares for variance
+            mins[i] = std::min(mins[i], features[i]);  // Track minimum
+            maxs[i] = std::max(maxs[i], features[i]);  // Track maximum
         }
     }
-    
-    // Calculate means and standard deviations
-    int n = data.size();
+
+    int n = data.size(); // Number of data entries
+
+    // Calculate normalization parameters for each feature
     for (int i = 0; i < 6; i++) {
-        params[i].mean = sums[i] / n;
-        params[i].std = sqrt((sumSquares[i] / n) - (params[i].mean * params[i].mean));
-        params[i].min = mins[i];
-        params[i].max = maxs[i];
-        if (params[i].std == 0) params[i].std = 1; // Prevent division by zero
+        params[i].mean = sums[i] / n; // Compute mean
+        params[i].std = sqrt((sumSquares[i] / n) - (params[i].mean * params[i].mean)); // Std dev
+        params[i].min = mins[i]; // Store min
+        params[i].max = maxs[i]; // Store max
+
+        if (params[i].std == 0) params[i].std = 1; // Avoid division by zero
     }
     
     // Apply normalization
