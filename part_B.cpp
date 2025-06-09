@@ -576,79 +576,69 @@ std::vector<DataEntry> removeOutliers(const std::vector<DataEntry>& data, double
     
     for (int i = 0; i < 7; ++i) means[i] /= dataSize;
     
-    // Calculate standard deviations in one pass
-    for (const auto& entry : data) {
-        const std::vector<double> values = {
-            entry.MYCT, entry.MMIN, entry.MMAX, entry.CACH, 
-            entry.CHMIN, entry.CHMAX, entry.PRP
-        };
-        
-        for (int i = 0; i < 7; ++i) {
-            stdDevs[i] += std::pow(values[i] - means[i], 2);
-        }
-    }
+// Calculate standard deviations in one pass
+for (const auto& entry : data) {
+    const std::vector<double> values = {
+        entry.MYCT, entry.MMIN, entry.MMAX, entry.CACH, 
+        entry.CHMIN, entry.CHMAX, entry.PRP
+    };
     
     for (int i = 0; i < 7; ++i) {
-        stdDevs[i] = std::sqrt(stdDevs[i] / dataSize);
-        if (stdDevs[i] < 1e-10) stdDevs[i] = 1.0; // Avoid division by zero
+        stdDevs[i] += std::pow(values[i] - means[i], 2); // Sum of squared diffs for variance
     }
-    
-    // Pre-allocate result vector with estimated size
-    std::vector<DataEntry> cleanedData;
-    cleanedData.reserve(dataSize);
-    
-    // Identify and filter outliers in one pass
-    int outlierCount = 0;
-    for (const auto& entry : data) {
-        const std::vector<double> values = {
-            entry.MYCT, entry.MMIN, entry.MMAX, entry.CACH, 
-            entry.CHMIN, entry.CHMAX, entry.PRP
-        };
-        
-        bool isOutlier = false;
-        for (int j = 0; j < 7; ++j) {
-            if (std::abs((values[j] - means[j]) / stdDevs[j]) > threshold) {
-                isOutlier = true;
-                outlierCount++;
-                break;
-            }
-        }
-        
-        if (!isOutlier) cleanedData.push_back(entry);
-    }
-    
-    std::cout << GREEN << "[SUCCESS] " << RESET << "Identified " << BOLD << outlierCount 
-              << RESET << " outliers (" << std::fixed << std::setprecision(1) 
-              << (100.0 * outlierCount / dataSize) << "% of data)" << std::endl;
-    std::cout << "Retained " << BOLD << cleanedData.size() << RESET << " data points" << std::endl;
-    
-    return cleanedData;
 }
+for (int i = 0; i < 7; ++i) {
+    stdDevs[i] = std::sqrt(stdDevs[i] / dataSize); // Standard deviation
+    if (stdDevs[i] < 1e-10) stdDevs[i] = 1.0; // Prevent division by near-zero
+}
+// Pre-allocate result vector with estimated size
+std::vector<DataEntry> cleanedData;
+cleanedData.reserve(dataSize);
+// Identify and filter outliers in one pass
+int outlierCount = 0;
+for (const auto& entry : data) {
+    const std::vector<double> values = {
+        entry.MYCT, entry.MMIN, entry.MMAX, entry.CACH, 
+        entry.CHMIN, entry.CHMAX, entry.PRP
+    };
+    
+    bool isOutlier = false;
+    for (int j = 0; j < 7; ++j) {
+        if (std::abs((values[j] - means[j]) / stdDevs[j]) > threshold) {
+            isOutlier = true;
+            outlierCount++;
+            break; // If any one feature is an outlier, discard the row
+        }
+    }
+    
+    if (!isOutlier) cleanedData.push_back(entry);
+}
+std::cout << GREEN << "[SUCCESS] " << RESET << "Identified " << BOLD << outlierCount 
+          << RESET << " outliers (" << std::fixed << std::setprecision(1) 
+          << (100.0 * outlierCount / dataSize) << "% of data)" << std::endl;
+std::cout << "Retained " << BOLD << cleanedData.size() << RESET << " data points" << std::endl;
 
-// Function to find optimal lambda for Tikhonov regularization using k-fold cross-validation
+return cleanedData;
 double findOptimalLambda(const Matrix& A, const Vector& b, int kFolds = 5) {
     printHeader("REGULARIZATION PARAMETER TUNING");
     
     const std::vector<double> lambdaValues = {0.001, 0.01, 0.1, 0.5, 1.0, 5.0, 10.0, 50.0, 100.0};
     std::vector<double> avgRmseValues(lambdaValues.size(), 0.0);
-    
     const int n = A.GetNumRows();
     const int foldSize = n / kFolds;
-    
+
     // Create indices once
     std::vector<int> indices(n);
     for (int i = 0; i < n; ++i) indices[i] = i + 1;
-    
+
     std::mt19937 g(42); // Fixed seed for reproducibility
     std::shuffle(indices.begin(), indices.end(), g);
-    
     // Pre-allocate datasets to avoid repeated allocations
     Matrix trainA(n - foldSize, A.GetNumCols()); 
     Vector trainB(n - foldSize);
     Matrix validA(foldSize, A.GetNumCols());
     Vector validB(foldSize);
     NonSquareLinearSystem solver(trainA, trainB);
-    
     for (size_t l = 0; l < lambdaValues.size(); ++l) {
         double lambda = lambdaValues[l];
         double totalRmse = 0.0;
@@ -659,7 +649,6 @@ double findOptimalLambda(const Matrix& A, const Vector& b, int kFolds = 5) {
         for (int fold = 0; fold < kFolds; ++fold) {
             int validStartIdx = fold * foldSize + 1;
             int validEndIdx = (fold == kFolds - 1) ? n : (fold + 1) * foldSize;
-            
             // Fill train/valid matrices
             int trainRow = 1, validRow = 1;
             for (int i = 1; i <= n; ++i) {
@@ -680,35 +669,7 @@ double findOptimalLambda(const Matrix& A, const Vector& b, int kFolds = 5) {
                     trainRow++;
                 }
             }
-            
-            // Update solver with new training data (avoiding recreation)
-            //solver.UpdateSystem(trainA, trainB);
-            //Vector coef = solver.SolveWithTikhonov(lambda);
-            
-            // Instead of updating an existing solver
-            // Create a new solver instance each time
-            NonSquareLinearSystem foldSolver(trainA, trainB);
-            Vector coef = foldSolver.SolveWithTikhonov(lambda);
-            
-            // Compute RMSE directly
-            double rmse = 0.0;
-            for (int i = 1; i <= validB.getSize(); ++i) {
-                double prediction = 0;
-                for (int j = 1; j <= A.GetNumCols(); ++j) {
-                    prediction += coef(j) * validA(i, j);
-                }
-                rmse += std::pow(prediction - validB(i), 2);
-            }
-            rmse = std::sqrt(rmse / validB.getSize());
-            totalRmse += rmse;
-            
-            std::cout << ".";
-            std::cout.flush();
-        }
-        
-        avgRmseValues[l] = totalRmse / kFolds;
-        std::cout << " Avg RMSE: " << std::fixed << std::setprecision(4) << avgRmseValues[l] << std::endl;
-    }
+
     
     // Find best lambda
     size_t bestIdx = std::min_element(avgRmseValues.begin(), avgRmseValues.end()) - avgRmseValues.begin();
