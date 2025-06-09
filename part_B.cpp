@@ -235,35 +235,132 @@ std::vector<NormParams> normalizeData(std::vector<DataEntry>& data, bool useMaxN
     return params;
 }
 
-// Split data into training and test sets with fixed seed for reproducibility
-void trainTestSplit(std::vector<DataEntry>& data, 
+
+void trainTestSplit(std::vector<DataEntry>& data,                           // Split data into training and test sets with fixed seed for reproducibility
                    std::vector<DataEntry>& train,
                    std::vector<DataEntry>& test,
                    double testSize = 0.2) {
-    printHeader("DATASET SPLITTING"); // Print section header
-
+    printHeader("DATASET SPLITTING");                                       // Print section header
     // Shuffle the data with a fixed seed for consistent results
-    std::mt19937 g(42); // Mersenne Twister PRNG seeded for reproducibility
-    std::shuffle(data.begin(), data.end(), g); // Shuffle the dataset randomly
+    std::mt19937 g(42);                                                     // Mersenne Twister PRNG seeded for reproducibility
+    std::shuffle(data.begin(), data.end(), g);                              // Shuffle the dataset randomly
 
-    int n = data.size(); // Total number of samples
-    int testSamples = static_cast<int>(n * testSize); // Calculate number of test samples
+    int n = data.size();                                                    // Total number of samples
+    int testSamples = static_cast<int>(n * testSize);                       // Calculate number of test samples
 
-    // Assign data: first part to training, last part to testing
-    train = std::vector<DataEntry>(data.begin(), data.end() - testSamples);
+    train = std::vector<DataEntry>(data.begin(), data.end() - testSamples); // Assign data: first part to training, last part to testing
     test = std::vector<DataEntry>(data.end() - testSamples, data.end());
 
-    // Print summary of the split
-    std::cout << GREEN << "[SUCCESS] " << RESET << "Data split into:" << std::endl;
+    std::cout << GREEN << "[SUCCESS] " << RESET << "Data split into:" << std::endl;     // Print summary of the split
     std::cout << "  - " << CYAN << "Training: " << RESET << BOLD << train.size() << RESET << " samples" << std::endl;
     std::cout << "  - " << YELLOW << "Testing:  " << RESET << BOLD << test.size() << RESET << " samples" << std::endl;
     std::cout << "  - " << MAGENTA << "Ratio:    " << RESET << std::fixed << std::setprecision(1) 
               << (100 - testSize * 100) << "% / " << (testSize * 100) << "%" << std::endl;
 }
+// Structure to hold evaluation metrics for a regression model
+struct ModelMetrics {
+    double rmse;                                                        // Root Mean Square Error
+    double mae;                                                         // Mean Absolute Error
+    double r2;                                                          // R-squared (coefficient of determination)
+};
+// Function to calculate performance metrics from predictions and actual labels
+ModelMetrics calculateMetrics(const Vector& predictions, const Vector& actual) {
+    ModelMetrics metrics;
+    double sumSquaredError = 0.0;
+    double sumAbsError = 0.0;
+    double sumActual = 0.0;
+    double sumSquaredActualDiff = 0.0;
+    int n = predictions.getSize(); // Number of samples
+    int validPredictions = 0; // Count of valid (non-NaN) predictions
+    double meanActual = 0.0;
 
-    
-    // Print coefficients
-    std::cout << BOLD << "Model Coefficients (Normalized Scale):" << RESET << std::endl;
+    // First pass: calculate mean of actual values
+    for (int i = 1; i <= n; ++i) {
+        if (!std::isnan(actual(i))) {
+            sumActual += actual(i);
+            validPredictions++;
+        }
+    }
+
+    // If no valid predictions, return NaNs
+    if (validPredictions == 0) {
+        metrics.rmse = metrics.mae = metrics.r2 = std::numeric_limits<double>::quiet_NaN();
+        return metrics;
+    }
+
+    meanActual = sumActual / validPredictions;
+
+    // Second pass: calculate errors and R² components
+    for (int i = 1; i <= n; ++i) {
+        if (std::isnan(predictions(i)) || std::isnan(actual(i))) continue;
+
+        double diff = predictions(i) - actual(i); // Prediction error
+        sumSquaredError += diff * diff;
+        sumAbsError += std::abs(diff);
+        sumSquaredActualDiff += std::pow(actual(i) - meanActual, 2); // Variance in actual
+    }
+
+    // Compute final metrics
+    metrics.rmse = std::sqrt(sumSquaredError / validPredictions); // Root Mean Square Error
+    metrics.mae = sumAbsError / validPredictions; // Mean Absolute Error
+    metrics.r2 = (sumSquaredActualDiff < 1e-10) ? 0.0 : 1.0 - (sumSquaredError / sumSquaredActualDiff); // R²
+
+    return metrics;
+}
+// Function to print model coefficients and evaluation metrics
+void printModelSummary(const Vector& coefficients, 
+                      const std::vector<NormParams>& normParams,
+                      const ModelMetrics& metrics,
+                      bool useMaxNorm = false,
+                      const std::string& methodName = "Pseudo-Inverse") {
+    printHeader("MODEL SUMMARY: " + methodName); // Print section title
+
+    // Display evaluation metrics
+    std::cout << BOLD << "Model Performance Metrics:" << RESET << std::endl;
+    std::cout << std::string(40, '-') << std::endl;
+    std::cout << std::setw(20) << "Metric" << std::setw(20) << "Value" << std::endl;
+    std::cout << std::string(40, '-') << std::endl;
+
+    // Print RMSE with NaN check
+    if (std::isnan(metrics.rmse)) {
+        std::cout << CYAN << std::setw(20) << "RMSE:" << RESET << std::setw(20) << "Error" << std::endl;
+    } else {
+        std::cout << CYAN << std::setw(20) << "RMSE:" << RESET << std::setw(20) << std::fixed << std::setprecision(4) << metrics.rmse << std::endl;
+    }
+
+    // Print MAE with NaN check
+    if (std::isnan(metrics.mae)) {
+        std::cout << CYAN << std::setw(20) << "MAE:" << RESET << std::setw(20) << "Error" << std::endl;
+    } else {
+        std::cout << CYAN << std::setw(20) << "MAE:" << RESET << std::setw(20) << std::fixed << std::setprecision(4) << metrics.mae << std::endl;
+    }
+
+    // Print R² with NaN check
+    if (std::isnan(metrics.r2)) {
+        std::cout << CYAN << std::setw(20) << "R^2:" << RESET << std::setw(20) << "Error" << std::endl;
+    } else {
+        std::cout << CYAN << std::setw(20) << "R^2:" << RESET << std::setw(20) << std::fixed << std::setprecision(4) << metrics.r2 << std::endl;
+    }
+
+    std::cout << std::string(40, '-') << std::endl << std::endl;
+
+    // Check if any model coefficient is NaN before continuing
+    bool hasNaN = false;
+    for (int i = 1; i <= coefficients.getSize(); i++) {
+        if (std::isnan(coefficients(i))) {
+            hasNaN = true;
+            break;
+        }
+    }
+
+    // If NaN values exist, print error message and return
+    if (hasNaN) {
+        std::cout << RED << "[ERROR] " << RESET << "Model coefficients contain NaN values. Unable to display model details." << std::endl;
+        return;
+    }
+
+
+    std::cout << BOLD << "Model Coefficients (Normalized Scale):" << RESET << std::endl;        // Print coefficients
     std::cout << std::string(40, '-') << std::endl;
     std::cout << std::setw(20) << "Parameter" << std::setw(20) << "Value" << std::endl;
     std::cout << std::string(40, '-') << std::endl;
