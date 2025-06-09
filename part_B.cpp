@@ -270,8 +270,8 @@ ModelMetrics calculateMetrics(const Vector& predictions, const Vector& actual) {
     double sumAbsError = 0.0;
     double sumActual = 0.0;
     double sumSquaredActualDiff = 0.0;
-    int n = predictions.getSize(); // Number of samples
-    int validPredictions = 0; // Count of valid (non-NaN) predictions
+    int n = predictions.getSize();                                      // Number of samples
+    int validPredictions = 0;                                           // Count of valid (non-NaN) predictions
     double meanActual = 0.0;
 
     // First pass: calculate mean of actual values
@@ -294,15 +294,15 @@ ModelMetrics calculateMetrics(const Vector& predictions, const Vector& actual) {
     for (int i = 1; i <= n; ++i) {
         if (std::isnan(predictions(i)) || std::isnan(actual(i))) continue;
 
-        double diff = predictions(i) - actual(i); // Prediction error
+        double diff = predictions(i) - actual(i);                       // Prediction error
         sumSquaredError += diff * diff;
         sumAbsError += std::abs(diff);
-        sumSquaredActualDiff += std::pow(actual(i) - meanActual, 2); // Variance in actual
+        sumSquaredActualDiff += std::pow(actual(i) - meanActual, 2);    // Variance in actual
     }
 
     // Compute final metrics
-    metrics.rmse = std::sqrt(sumSquaredError / validPredictions); // Root Mean Square Error
-    metrics.mae = sumAbsError / validPredictions; // Mean Absolute Error
+    metrics.rmse = std::sqrt(sumSquaredError / validPredictions);       // Root Mean Square Error
+    metrics.mae = sumAbsError / validPredictions;                       // Mean Absolute Error
     metrics.r2 = (sumSquaredActualDiff < 1e-10) ? 0.0 : 1.0 - (sumSquaredError / sumSquaredActualDiff); // R²
 
     return metrics;
