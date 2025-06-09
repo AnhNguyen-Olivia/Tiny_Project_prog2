@@ -105,42 +105,36 @@ std::vector<DataEntry> loadData(const std::string& filename) {
 
 // Structure to hold normalization parameters for each feature
 struct NormParams {
-    double mean;  // Mean of the feature
-    double std;   // Standard deviation of the feature
-    double min;   // Minimum value of the feature
-    double max;   // Maximum value of the feature
+    double mean;                                                    // Mean of the feature
+    double std;                                                     // Standard deviation of the feature
+    double min;                                                     // Minimum value of the feature
+    double max;                                                     // Maximum value of the feature
 };
 
 // Function that implements Gaussian Elimination with partial pivoting
 Vector gaussianElimination(const Matrix& A, const Vector& b) {
-    int n = A.GetNumRows(); // Get size of the system
+    int n = A.GetNumRows();                                         // Get size of the system
 
     // Create modifiable copies of matrix A and vector b
     Matrix Acopy = A;
     Vector bcopy = b;
-    Vector x(n); // Solution vector
+    Vector x(n);                                                    // Solution vector
 
     // Forward elimination process
     for (int k = 1; k <= n - 1; k++) {
-        int maxRow = k; // Start with current row as max
-        double maxVal = std::abs(Acopy(k, k)); // Get pivot candidate
-
-        // Find the row with the largest value in current column (partial pivoting)
-        for (int i = k + 1; i <= n; i++) {
+        int maxRow = k;                                             // Start with current row as max
+        double maxVal = std::abs(Acopy(k, k));                      // Get pivot candidate
+        for (int i = k + 1; i <= n; i++) {                          // Find the row with the largest value in current column (partial pivoting)
             if (std::abs(Acopy(i, k)) > maxVal) {
                 maxVal = std::abs(Acopy(i, k));
                 maxRow = i;
             }
         }
-
-        // If pivot is nearly zero, warn about singular matrix
-        if (maxVal < 1e-10) {
+        if (maxVal < 1e-10) {                                       // If pivot is nearly zero, warn about singular matrix
             std::cerr << RED << "Warning: Matrix may be singular or ill-conditioned" << RESET << std::endl;
-            return x; // Return empty or partial solution
+            return x;                                               // Return empty or partial solution
         }
-
-        // Swap current row with row of maximum value
-        if (maxRow != k) {
+        if (maxRow != k) {                                          // Swap current row with row of maximum value
             for (int j = k; j <= n; j++) {
                 double temp = Acopy(k, j);
                 Acopy(k, j) = Acopy(maxRow, j);
@@ -151,60 +145,51 @@ Vector gaussianElimination(const Matrix& A, const Vector& b) {
             bcopy(maxRow) = temp;
         }
 
-        // Eliminate entries below the pivot
-        for (int i = k + 1; i <= n; i++) {
-            double factor = Acopy(i, k) / Acopy(k, k); // Compute elimination factor
+        for (int i = k + 1; i <= n; i++) {                      // Eliminate entries below the pivot
+            double factor = Acopy(i, k) / Acopy(k, k);          // Compute elimination factor
             for (int j = k; j <= n; j++) {
-                Acopy(i, j) -= factor * Acopy(k, j); // Subtract from row
+                Acopy(i, j) -= factor * Acopy(k, j);            // Subtract from row
             }
-            bcopy(i) -= factor * bcopy(k); // Update right-hand side
+            bcopy(i) -= factor * bcopy(k);                      // Update right-hand side
         }
     }
-
-    // Back substitution to solve upper-triangular system
-    for (int i = n; i >= 1; i--) {
+    for (int i = n; i >= 1; i--) {                              // Back substitution to solve upper-triangular system
         double sum = 0.0;
         for (int j = i + 1; j <= n; j++) {
-            sum += Acopy(i, j) * x(j); // Sum known terms
+            sum += Acopy(i, j) * x(j);                          // Sum known terms
         }
-        x(i) = (bcopy(i) - sum) / Acopy(i, i); // Solve for x(i)
+        x(i) = (bcopy(i) - sum) / Acopy(i, i);                  // Solve for x(i)
     }
 
-    return x; // Return solution vector
+    return x;                                                   // Return solution vector
 }
 
 // Function to normalize a dataset with enhanced feedback
 std::vector<NormParams> normalizeData(std::vector<DataEntry>& data, bool useMaxNorm = false) {
-    printHeader("DATA NORMALIZATION"); // Print visual section header
+    printHeader("DATA NORMALIZATION");                          // Print visual section header
 
-    std::vector<NormParams> params(6); // 6 features in DataEntry
-    std::vector<double> sums(6, 0.0); // For computing means
-    std::vector<double> sumSquares(6, 0.0); // For computing variances
+    std::vector<NormParams> params(6);                          // 6 features in DataEntry
+    std::vector<double> sums(6, 0.0);                           // For computing means
+    std::vector<double> sumSquares(6, 0.0);                     // For computing variances
     std::vector<double> mins(6, std::numeric_limits<double>::max()); // Initialize min values
     std::vector<double> maxs(6, std::numeric_limits<double>::lowest()); // Initialize max values
 
-    // Iterate through all data entries
-    for (const auto& entry : data) {
-        // Extract feature values
+    for (const auto& entry : data) {                            // Iterate through all data entries
         std::vector<double> features = {
             entry.MYCT, entry.MMIN, entry.MMAX,
             entry.CACH, entry.CHMIN, entry.CHMAX
         };
-
-        // Accumulate statistics for each feature
-        for (int i = 0; i < 6; i++) {
-            sums[i] += features[i];                    // Sum for mean
-            sumSquares[i] += features[i] * features[i]; // Sum of squares for variance
-            mins[i] = std::min(mins[i], features[i]);  // Track minimum
-            maxs[i] = std::max(maxs[i], features[i]);  // Track maximum
+        
+        for (int i = 0; i < 6; i++) {                           // Accumulate statistics for each feature
+            sums[i] += features[i];                             // Sum for mean
+            sumSquares[i] += features[i] * features[i];         // Sum of squares for variance
+            mins[i] = std::min(mins[i], features[i]);           // Track minimum
+            maxs[i] = std::max(maxs[i], features[i]);           // Track maximum
         }
     }
-
-    int n = data.size(); // Number of data entries
-
-    // Calculate normalization parameters for each feature
-    for (int i = 0; i < 6; i++) {
-        params[i].mean = sums[i] / n; // Compute mean
+    int n = data.size();                                        // Number of data entries 
+    for (int i = 0; i < 6; i++) {                               // Calculate normalization parameters for each feature
+        params[i].mean = sums[i] / n;                           // Compute mean
         params[i].std = sqrt((sumSquares[i] / n) - (params[i].mean * params[i].mean)); // Std dev
         params[i].min = mins[i]; // Store min
         params[i].max = maxs[i]; // Store max
