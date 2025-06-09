@@ -302,3 +302,15 @@ Matrix Matrix::Inverse() const {                        //compute matrix inverse
     }
     return inv;
 }
+
+bool Matrix::Symmetric() const {                        //check if the matrix is symmetric
+if (!Square()) return false;                            //not square -> not symmetric
+for (int i = 0; i < mNumRows; i++) {
+    for (int j = 0; j < i; j++) {
+        if (mData[i][j] != mData[j][i]) {
+            return false;                               //found asymmetry
+        }
+    }
+}
+return true;
+}
