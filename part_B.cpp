@@ -23,88 +23,88 @@ const std::string RESET = "\033[0m";
 
 // Struct to hold a data instance
 struct DataEntry {
-    double MYCT, MMIN, MMAX, CACH, CHMIN, CHMAX, PRP;
+    double MYCT, MMIN, MMAX, CACH, CHMIN, CHMAX, PRP;           // Hardware features and target (PRP)
 };
 
 // Progress bar function with enhanced visual
 void showProgressBar(int progress, int total) {
-    const int barWidth = 50;
-    float percentage = static_cast<float>(progress) / total;
-    int pos = static_cast<int>(barWidth * percentage);
-    
-    std::cout << "[";
-    for (int i = 0; i < barWidth; ++i) {
-        if (i < pos) std::cout << CYAN << "=" << RESET;
-        else if (i == pos) std::cout << BLUE << ">" << RESET;
-        else std::cout << " ";
+    const int barWidth = 50;                                    // Width of the progress bar in characters
+    float percentage = static_cast<float>(progress) / total;    // Calculate progress percentage
+    int pos = static_cast<int>(barWidth * percentage);          // Calculate how many characters to fill
+
+    std::cout << "["; // Start of progress bar
+    for (int i = 0; i < barWidth; ++i) { // Loop through the bar width
+        if (i < pos) std::cout << CYAN << "=" << RESET; // Completed part of the bar in cyan
+        else if (i == pos) std::cout << BLUE << ">" << RESET; // Current position marker in blue
+        else std::cout << " "; // Remaining part is empty
     }
-    std::cout << "] " << BOLD << int(percentage * 100.0) << "%" << RESET << "\r";
-    std::cout.flush();
-    
-    if (progress == total) {
+    std::cout << "] " << BOLD << int(percentage * 100.0) << "%" << RESET << "\r"; // Print percentage
+    std::cout.flush(); // Ensure output is displayed immediately
+
+    if (progress == total) { // If complete, print a newline to move to next line
         std::cout << std::endl;
     }
 }
 
 // Print section header with consistent styling
 void printHeader(const std::string& title) {
-    const int WIDTH = 70;
-    std::cout << "\n" << BLUE << std::string(WIDTH, '=') << RESET << std::endl;
-    std::cout << BOLD << "  " << title << RESET << std::endl;
-    std::cout << BLUE << std::string(WIDTH, '=') << RESET << std::endl;
+    const int WIDTH = 70; // Total width for header decoration
+    std::cout << "\n" << BLUE << std::string(WIDTH, '=') << RESET << std::endl; // Top border
+    std::cout << BOLD << "  " << title << RESET << std::endl; // Title in bold
+    std::cout << BLUE << std::string(WIDTH, '=') << RESET << std::endl; // Bottom border
 }
 
 // Function to load data from CSV with progress indication
 std::vector<DataEntry> loadData(const std::string& filename) {
-    std::vector<DataEntry> data;
-    std::ifstream file(filename);
-    
-    if (!file.is_open()) {
+    std::vector<DataEntry> data; // Vector to store loaded data
+    std::ifstream file(filename); // Open file for reading
+
+    if (!file.is_open()) { // Check if file couldn't be opened
         std::cerr << RED << "ERROR: Could not open file " << filename << RESET << std::endl;
-        return data;
+        return data; // Return empty data vector
     }
-    
-    printHeader("DATA LOADING");
-    std::cout << "Source: " << CYAN << filename << RESET << std::endl;
-    
+
+    printHeader("DATA LOADING"); // Display loading header
+    std::cout << "Source: " << CYAN << filename << RESET << std::endl; // Show source filename
+
     // Reserve initial capacity to avoid reallocations
-    data.reserve(1000);
-    
-    std::string line;
-    int totalLines = 0;
-    
-    while (std::getline(file, line)) {
-        totalLines++;
-        
+    data.reserve(1000); // Preallocate space for performance
+
+    std::string line; // To store each line of the file
+    int totalLines = 0; // Count how many lines read
+
+    while (std::getline(file, line)) { // Read file line by line
+        totalLines++; // Increment line count
+
         // Show progress every 100 lines
         if (totalLines % 100 == 0) {
-            showProgressBar(totalLines, std::max(totalLines, 1000));
+            showProgressBar(totalLines, std::max(totalLines, 1000)); // Display progress bar
         }
-        
-        std::stringstream ss(line);
-        std::string token;
-        DataEntry entry;
+
+        std::stringstream ss(line); // Create stream from line
+        std::string token; // Temporary token for each CSV field
+        DataEntry entry; // New entry to store parsed data
 
         // Skip first two columns (non-predictive) - use getline directly
-        std::getline(ss, token, ',');
-        std::getline(ss, token, ',');
+        std::getline(ss, token, ','); // Skip first column
+        std::getline(ss, token, ','); // Skip second column
 
-        // Read predictive features
-        std::getline(ss, token, ','); entry.MYCT = std::stod(token);
-        std::getline(ss, token, ','); entry.MMIN = std::stod(token);
-        std::getline(ss, token, ','); entry.MMAX = std::stod(token);
-        std::getline(ss, token, ','); entry.CACH = std::stod(token);
-        std::getline(ss, token, ','); entry.CHMIN = std::stod(token);
-        std::getline(ss, token, ','); entry.CHMAX = std::stod(token);
-        std::getline(ss, token, ','); entry.PRP = std::stod(token);
+        // Read predictive features and target from the remaining columns
+        std::getline(ss, token, ','); entry.MYCT = std::stod(token); // Convert and assign MYCT
+        std::getline(ss, token, ','); entry.MMIN = std::stod(token); // Convert and assign MMIN
+        std::getline(ss, token, ','); entry.MMAX = std::stod(token); // Convert and assign MMAX
+        std::getline(ss, token, ','); entry.CACH = std::stod(token); // Convert and assign CACH
+        std::getline(ss, token, ','); entry.CHMIN = std::stod(token); // Convert and assign CHMIN
+        std::getline(ss, token, ','); entry.CHMAX = std::stod(token); // Convert and assign CHMAX
+        std::getline(ss, token, ','); entry.PRP = std::stod(token);   // Convert and assign PRP
 
-        data.push_back(entry);
+        data.push_back(entry); // Add entry to dataset
     }
 
-    showProgressBar(totalLines, totalLines);
+    showProgressBar(totalLines, totalLines); // Final call to show complete progress bar
     std::cout << GREEN << "[SUCCESS] " << RESET << "Loaded " << BOLD << data.size() 
-              << RESET << " data entries" << std::endl;
-    return data;
+              << RESET << " data entries" << std::endl; // Report success and number of entries
+    return data; // Return loaded data
 }
 
 // Structure to hold normalization parameters
