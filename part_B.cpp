@@ -313,7 +313,7 @@ void printModelSummary(const Vector& coefficients,
                       const ModelMetrics& metrics,
                       bool useMaxNorm = false,
                       const std::string& methodName = "Pseudo-Inverse") {
-    printHeader("MODEL SUMMARY: " + methodName); // Print section title
+    printHeader("MODEL SUMMARY: " + methodName);                    // Print section title
 
     // Display evaluation metrics
     std::cout << BOLD << "Model Performance Metrics:" << RESET << std::endl;
@@ -475,7 +475,7 @@ Matrix expandFeatures(const std::vector<DataEntry>& data, bool addInteractions =
         int col = 1;
         
         // Base features (always included)
-        X(i+1, col++) = 1.0;  // Intercept
+        X(i+1, col++) = 1.0;                                    // Intercept
         X(i+1, col++) = entry.MYCT;
         X(i+1, col++) = entry.MMIN;
         X(i+1, col++) = entry.MMAX;
@@ -542,7 +542,6 @@ std::vector<std::string> getExpandedFeatureNames(bool addInteractions = true,
     
     // Pre-allocate memory to avoid reallocations
     featureNames.reserve(7 + (addPolynomials ? 6 : 0) + (addLog ? 6 : 0) + (addInteractions ? 15 : 0));
-    
     if (addPolynomials)
         for (const auto& name : baseFeatures) featureNames.push_back(name + "²");
     
