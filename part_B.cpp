@@ -32,32 +32,32 @@ void showProgressBar(int progress, int total) {
     float percentage = static_cast<float>(progress) / total;    // Calculate progress percentage
     int pos = static_cast<int>(barWidth * percentage);          // Calculate how many characters to fill
 
-    std::cout << "["; // Start of progress bar
-    for (int i = 0; i < barWidth; ++i) { // Loop through the bar width
-        if (i < pos) std::cout << CYAN << "=" << RESET; // Completed part of the bar in cyan
-        else if (i == pos) std::cout << BLUE << ">" << RESET; // Current position marker in blue
-        else std::cout << " "; // Remaining part is empty
+    std::cout << "[";                                           // Start of progress bar
+    for (int i = 0; i < barWidth; ++i) {                        // Loop through the bar width
+        if (i < pos) std::cout << CYAN << "=" << RESET;         // Completed part of the bar in cyan
+        else if (i == pos) std::cout << BLUE << ">" << RESET;   // Current position marker in blue
+        else std::cout << " ";                                  // Remaining part is empty
     }
     std::cout << "] " << BOLD << int(percentage * 100.0) << "%" << RESET << "\r"; // Print percentage
-    std::cout.flush(); // Ensure output is displayed immediately
+    std::cout.flush();                                          // Ensure output is displayed immediately
 
-    if (progress == total) { // If complete, print a newline to move to next line
+    if (progress == total) {                                    // If complete, print a newline to move to next line
         std::cout << std::endl;
     }
 }
 
 // Print section header with consistent styling
 void printHeader(const std::string& title) {
-    const int WIDTH = 70; // Total width for header decoration
+    const int WIDTH = 70;                                       // Total width for header decoration
     std::cout << "\n" << BLUE << std::string(WIDTH, '=') << RESET << std::endl; // Top border
-    std::cout << BOLD << "  " << title << RESET << std::endl; // Title in bold
+    std::cout << BOLD << "  " << title << RESET << std::endl;   // Title in bold
     std::cout << BLUE << std::string(WIDTH, '=') << RESET << std::endl; // Bottom border
 }
 
 // Function to load data from CSV with progress indication
 std::vector<DataEntry> loadData(const std::string& filename) {
-    std::vector<DataEntry> data; // Vector to store loaded data
-    std::ifstream file(filename); // Open file for reading
+    std::vector<DataEntry> data;                                // Vector to store loaded data
+    std::ifstream file(filename);                               // Open file for reading
 
     if (!file.is_open()) { // Check if file couldn't be opened
         std::cerr << RED << "ERROR: Could not open file " << filename << RESET << std::endl;
