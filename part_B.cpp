@@ -32,58 +32,62 @@ void showProgressBar(int progress, int total) {
     float percentage = static_cast<float>(progress) / total;    // Calculate progress percentage
     int pos = static_cast<int>(barWidth * percentage);          // Calculate how many characters to fill
 
-    std::cout << "[";                                           // Start of progress bar
-    for (int i = 0; i < barWidth; ++i) {                        // Loop through the bar width
-        if (i < pos) std::cout << CYAN << "=" << RESET;         // Completed part of the bar in cyan
-        else if (i == pos) std::cout << BLUE << ">" << RESET;   // Current position marker in blue
-        else std::cout << " ";                                  // Remaining part is empty
+    std::cout << "["; // Start of progress bar
+    for (int i = 0; i < barWidth; ++i) { // Loop through the bar width
+        if (i < pos) std::cout << CYAN << "=" << RESET; // Completed part of the bar in cyan
+        else if (i == pos) std::cout << BLUE << ">" << RESET; // Current position marker in blue
+        else std::cout << " "; // Remaining part is empty
     }
     std::cout << "] " << BOLD << int(percentage * 100.0) << "%" << RESET << "\r"; // Print percentage
-    std::cout.flush();                                          // Ensure output is displayed immediately
+    std::cout.flush(); // Ensure output is displayed immediately
 
-    if (progress == total) {                                    // If complete, print a newline to move to next line
+    if (progress == total) { // If complete, print a newline to move to next line
         std::cout << std::endl;
     }
 }
 
 // Print section header with consistent styling
 void printHeader(const std::string& title) {
-    const int WIDTH = 70;                                       // Total width for header decoration
+    const int WIDTH = 70; // Total width for header decoration
     std::cout << "\n" << BLUE << std::string(WIDTH, '=') << RESET << std::endl; // Top border
-    std::cout << BOLD << "  " << title << RESET << std::endl;   // Title in bold
+    std::cout << BOLD << "  " << title << RESET << std::endl; // Title in bold
     std::cout << BLUE << std::string(WIDTH, '=') << RESET << std::endl; // Bottom border
 }
 
 // Function to load data from CSV with progress indication
 std::vector<DataEntry> loadData(const std::string& filename) {
-    std::vector<DataEntry> data;                                // Vector to store loaded data
-    std::ifstream file(filename);                               // Open file for reading
+    std::vector<DataEntry> data; // Vector to store loaded data
+    std::ifstream file(filename); // Open file for reading
 
-    if (!file.is_open()) {                                      // Check if file couldn't be opened
+    if (!file.is_open()) { // Check if file couldn't be opened
         std::cerr << RED << "ERROR: Could not open file " << filename << RESET << std::endl;
-        return data;                                            // Return empty data vector
+        return data; // Return empty data vector
     }
 
     printHeader("DATA LOADING"); // Display loading header
     std::cout << "Source: " << CYAN << filename << RESET << std::endl; // Show source filename
-                                                                // Reserve initial capacity to avoid reallocations
-    data.reserve(1000);                                         // Preallocate space for performance
-    std::string line;                                           // To store each line of the file
-    int totalLines = 0;                                         // Count how many lines read
 
-    while (std::getline(file, line)) {                          // Read file line by line
-        totalLines++;                                           // Increment line count                                                           
-        if (totalLines % 100 == 0) {                            // Show progress every 100 lines
+    // Reserve initial capacity to avoid reallocations
+    data.reserve(1000); // Preallocate space for performance
+
+    std::string line; // To store each line of the file
+    int totalLines = 0; // Count how many lines read
+
+    while (std::getline(file, line)) { // Read file line by line
+        totalLines++; // Increment line count
+
+        // Show progress every 100 lines
+        if (totalLines % 100 == 0) {
             showProgressBar(totalLines, std::max(totalLines, 1000)); // Display progress bar
         }
 
-        std::stringstream ss(line);                             // Create stream from line
-        std::string token;                                      // Temporary token for each CSV field
-        DataEntry entry;                                        // New entry to store parsed data
+        std::stringstream ss(line); // Create stream from line
+        std::string token; // Temporary token for each CSV field
+        DataEntry entry; // New entry to store parsed data
 
         // Skip first two columns (non-predictive) - use getline directly
-        std::getline(ss, token, ',');                           // Skip first column
-        std::getline(ss, token, ',');                           // Skip second column
+        std::getline(ss, token, ','); // Skip first column
+        std::getline(ss, token, ','); // Skip second column
 
         // Read predictive features and target from the remaining columns
         std::getline(ss, token, ','); entry.MYCT = std::stod(token); // Convert and assign MYCT
@@ -94,47 +98,52 @@ std::vector<DataEntry> loadData(const std::string& filename) {
         std::getline(ss, token, ','); entry.CHMAX = std::stod(token); // Convert and assign CHMAX
         std::getline(ss, token, ','); entry.PRP = std::stod(token);   // Convert and assign PRP
 
-        data.push_back(entry);                                      // Add entry to dataset
+        data.push_back(entry); // Add entry to dataset
     }
 
-    showProgressBar(totalLines, totalLines);                        // Final call to show complete progress bar
+    showProgressBar(totalLines, totalLines); // Final call to show complete progress bar
     std::cout << GREEN << "[SUCCESS] " << RESET << "Loaded " << BOLD << data.size() 
-              << RESET << " data entries" << std::endl;             // Report success and number of entries
-    return data;                                                    // Return loaded data
+              << RESET << " data entries" << std::endl; // Report success and number of entries
+    return data; // Return loaded data
 }
 
-// Structure to hold normalization parameters for each feature
+// Structure to hold normalization parameters
 struct NormParams {
-    double mean;                                                    // Mean of the feature
-    double std;                                                     // Standard deviation of the feature
-    double min;                                                     // Minimum value of the feature
-    double max;                                                     // Maximum value of the feature
+    double mean;
+    double std;
+    double min;
+    double max;
 };
 
 // Function that implements Gaussian Elimination with partial pivoting
 Vector gaussianElimination(const Matrix& A, const Vector& b) {
-    int n = A.GetNumRows();                                         // Get size of the system
-
-    // Create modifiable copies of matrix A and vector b
+    int n = A.GetNumRows();
+    
+    // Create copies we can modify
     Matrix Acopy = A;
     Vector bcopy = b;
-    Vector x(n);                                                    // Solution vector
-
-    // Forward elimination process
+    Vector x(n);
+    
+    // Forward elimination with partial pivoting
     for (int k = 1; k <= n - 1; k++) {
-        int maxRow = k;                                             // Start with current row as max
-        double maxVal = std::abs(Acopy(k, k));                      // Get pivot candidate
-        for (int i = k + 1; i <= n; i++) {                          // Find the row with the largest value in current column (partial pivoting)
+        // Find pivot
+        int maxRow = k;
+        double maxVal = std::abs(Acopy(k, k));
+        for (int i = k + 1; i <= n; i++) {
             if (std::abs(Acopy(i, k)) > maxVal) {
                 maxVal = std::abs(Acopy(i, k));
                 maxRow = i;
             }
         }
-        if (maxVal < 1e-10) {                                       // If pivot is nearly zero, warn about singular matrix
+        
+        // Check for singularity
+        if (maxVal < 1e-10) {
             std::cerr << RED << "Warning: Matrix may be singular or ill-conditioned" << RESET << std::endl;
-            return x;                                               // Return empty or partial solution
+            return x;
         }
-        if (maxRow != k) {                                          // Swap current row with row of maximum value
+        
+        // Swap rows if needed
+        if (maxRow != k) {
             for (int j = k; j <= n; j++) {
                 double temp = Acopy(k, j);
                 Acopy(k, j) = Acopy(maxRow, j);
@@ -144,70 +153,78 @@ Vector gaussianElimination(const Matrix& A, const Vector& b) {
             bcopy(k) = bcopy(maxRow);
             bcopy(maxRow) = temp;
         }
-
-        for (int i = k + 1; i <= n; i++) {                      // Eliminate entries below the pivot
-            double factor = Acopy(i, k) / Acopy(k, k);          // Compute elimination factor
+        
+        // Eliminate below
+        for (int i = k + 1; i <= n; i++) {
+            double factor = Acopy(i, k) / Acopy(k, k);
             for (int j = k; j <= n; j++) {
-                Acopy(i, j) -= factor * Acopy(k, j);            // Subtract from row
+                Acopy(i, j) -= factor * Acopy(k, j);
             }
-            bcopy(i) -= factor * bcopy(k);                      // Update right-hand side
+            bcopy(i) -= factor * bcopy(k);
         }
     }
-    for (int i = n; i >= 1; i--) {                              // Back substitution to solve upper-triangular system
+    
+    // Back substitution
+    for (int i = n; i >= 1; i--) {
         double sum = 0.0;
         for (int j = i + 1; j <= n; j++) {
-            sum += Acopy(i, j) * x(j);                          // Sum known terms
+            sum += Acopy(i, j) * x(j);
         }
-        x(i) = (bcopy(i) - sum) / Acopy(i, i);                  // Solve for x(i)
+        x(i) = (bcopy(i) - sum) / Acopy(i, i);
     }
-
-    return x;                                                   // Return solution vector
+    
+    return x;
 }
 
 // Function to normalize a dataset with enhanced feedback
 std::vector<NormParams> normalizeData(std::vector<DataEntry>& data, bool useMaxNorm = false) {
-    printHeader("DATA NORMALIZATION");                          // Print visual section header
-
-    std::vector<NormParams> params(6);                          // 6 features in DataEntry
-    std::vector<double> sums(6, 0.0);                           // For computing means
-    std::vector<double> sumSquares(6, 0.0);                     // For computing variances
-    std::vector<double> mins(6, std::numeric_limits<double>::max()); // Initialize min values
-    std::vector<double> maxs(6, std::numeric_limits<double>::lowest()); // Initialize max values
-
-    for (const auto& entry : data) {                            // Iterate through all data entries
+    printHeader("DATA NORMALIZATION");
+    
+    std::vector<NormParams> params(6); // 6 features
+    std::vector<double> sums(6, 0.0);
+    std::vector<double> sumSquares(6, 0.0);
+    std::vector<double> mins(6, std::numeric_limits<double>::max());
+    std::vector<double> maxs(6, std::numeric_limits<double>::lowest());
+    
+    // Calculate sums, mins and maxs
+    for (const auto& entry : data) {
         std::vector<double> features = {
-            entry.MYCT, entry.MMIN, entry.MMAX,
+            entry.MYCT, entry.MMIN, entry.MMAX, 
             entry.CACH, entry.CHMIN, entry.CHMAX
         };
         
-        for (int i = 0; i < 6; i++) {                           // Accumulate statistics for each feature
-            sums[i] += features[i];                             // Sum for mean
-            sumSquares[i] += features[i] * features[i];         // Sum of squares for variance
-            mins[i] = std::min(mins[i], features[i]);           // Track minimum
-            maxs[i] = std::max(maxs[i], features[i]);           // Track maximum
+        for (int i = 0; i < 6; i++) {
+            sums[i] += features[i];
+            sumSquares[i] += features[i] * features[i];
+            mins[i] = std::min(mins[i], features[i]);
+            maxs[i] = std::max(maxs[i], features[i]);
         }
     }
-    int n = data.size();                                        // Number of data entries 
-    for (int i = 0; i < 6; i++) {                               // Calculate normalization parameters for each feature
-        params[i].mean = sums[i] / n;                           // Compute mean
-        params[i].std = sqrt((sumSquares[i] / n) - (params[i].mean * params[i].mean)); // Std dev
-        params[i].min = mins[i];                                // Store min
-        params[i].max = maxs[i];                                // Store max
-        if (params[i].std == 0) params[i].std = 1;              // Avoid division by zero
+    
+    // Calculate means and standard deviations
+    int n = data.size();
+    for (int i = 0; i < 6; i++) {
+        params[i].mean = sums[i] / n;
+        params[i].std = sqrt((sumSquares[i] / n) - (params[i].mean * params[i].mean));
+        params[i].min = mins[i];
+        params[i].max = maxs[i];
+        if (params[i].std == 0) params[i].std = 1; // Prevent division by zero
     }
     
     // Apply normalization
     std::cout << "Using " << (useMaxNorm ? "max-value" : "z-score") << " normalization..." << std::endl;
     
     for (auto& entry : data) {
-        if (useMaxNorm) {                                               // Max-value normalization (feature / max_value)            
+        if (useMaxNorm) {
+            // Max-value normalization (feature / max_value)
             entry.MYCT = entry.MYCT / params[0].max;
             entry.MMIN = entry.MMIN / params[1].max;
             entry.MMAX = entry.MMAX / params[2].max;
             entry.CACH = entry.CACH / params[3].max;
             entry.CHMIN = entry.CHMIN / params[4].max;
             entry.CHMAX = entry.CHMAX / params[5].max;
-        } else {                                                        // Z-score normalization ((feature - mean) / std)            
+        } else {
+            // Z-score normalization ((feature - mean) / std)
             entry.MYCT = (entry.MYCT - params[0].mean) / params[0].std;
             entry.MMIN = (entry.MMIN - params[1].mean) / params[1].std;
             entry.MMAX = (entry.MMAX - params[2].mean) / params[2].std;
@@ -216,8 +233,9 @@ std::vector<NormParams> normalizeData(std::vector<DataEntry>& data, bool useMaxN
             entry.CHMAX = (entry.CHMAX - params[5].mean) / params[5].std;
         }
     }
-
-    std::cout << BOLD << "Feature Statistics:" << RESET << std::endl;   // Print normalization info
+    
+    // Print normalization info
+    std::cout << BOLD << "Feature Statistics:" << RESET << std::endl;
     std::cout << CYAN << std::setw(10) << "Feature" << std::setw(12) << "Mean" << std::setw(12) << "StdDev" 
               << std::setw(12) << "Min" << std::setw(12) << "Max" << RESET << std::endl;
     std::cout << std::string(58, '-') << std::endl;
@@ -235,116 +253,114 @@ std::vector<NormParams> normalizeData(std::vector<DataEntry>& data, bool useMaxN
     return params;
 }
 
-
-void trainTestSplit(std::vector<DataEntry>& data,                           // Split data into training and test sets with fixed seed for reproducibility
+// Split data into training and test sets with fixed seed for reproducibility
+void trainTestSplit(std::vector<DataEntry>& data, 
                    std::vector<DataEntry>& train,
                    std::vector<DataEntry>& test,
                    double testSize = 0.2) {
-    printHeader("DATASET SPLITTING");                                       // Print section header
-    // Shuffle the data with a fixed seed for consistent results
-    std::mt19937 g(42);                                                     // Mersenne Twister PRNG seeded for reproducibility
-    std::shuffle(data.begin(), data.end(), g);                              // Shuffle the dataset randomly
-
-    int n = data.size();                                                    // Total number of samples
-    int testSamples = static_cast<int>(n * testSize);                       // Calculate number of test samples
-
-    train = std::vector<DataEntry>(data.begin(), data.end() - testSamples); // Assign data: first part to training, last part to testing
+    printHeader("DATASET SPLITTING");
+    
+    // Shuffle the data with a fixed seed
+    std::mt19937 g(42); // Fixed seed for reproducibility
+    std::shuffle(data.begin(), data.end(), g);
+    
+    int n = data.size();
+    int testSamples = static_cast<int>(n * testSize);
+    
+    train = std::vector<DataEntry>(data.begin(), data.end() - testSamples);
     test = std::vector<DataEntry>(data.end() - testSamples, data.end());
-
-    std::cout << GREEN << "[SUCCESS] " << RESET << "Data split into:" << std::endl;     // Print summary of the split
+    
+    std::cout << GREEN << "[SUCCESS] " << RESET << "Data split into:" << std::endl;
     std::cout << "  - " << CYAN << "Training: " << RESET << BOLD << train.size() << RESET << " samples" << std::endl;
     std::cout << "  - " << YELLOW << "Testing:  " << RESET << BOLD << test.size() << RESET << " samples" << std::endl;
     std::cout << "  - " << MAGENTA << "Ratio:    " << RESET << std::fixed << std::setprecision(1) 
               << (100 - testSize * 100) << "% / " << (testSize * 100) << "%" << std::endl;
 }
-// Structure to hold evaluation metrics for a regression model
+
+// Calculate RMSE and other metrics
 struct ModelMetrics {
-    double rmse;                                                        // Root Mean Square Error
-    double mae;                                                         // Mean Absolute Error
-    double r2;                                                          // R-squared (coefficient of determination)
+    double rmse;
+    double mae;
+    double r2;
 };
-// Function to calculate performance metrics from predictions and actual labels
+
 ModelMetrics calculateMetrics(const Vector& predictions, const Vector& actual) {
     ModelMetrics metrics;
     double sumSquaredError = 0.0;
     double sumAbsError = 0.0;
     double sumActual = 0.0;
     double sumSquaredActualDiff = 0.0;
-    int n = predictions.getSize();                                      // Number of samples
-    int validPredictions = 0;                                           // Count of valid (non-NaN) predictions
+    int n = predictions.getSize();
+    int validPredictions = 0;
     double meanActual = 0.0;
-
-    // First pass: calculate mean of actual values
+    
+    // First pass - calculate mean of actual values
     for (int i = 1; i <= n; ++i) {
         if (!std::isnan(actual(i))) {
             sumActual += actual(i);
             validPredictions++;
         }
     }
-
-    // If no valid predictions, return NaNs
+    
     if (validPredictions == 0) {
         metrics.rmse = metrics.mae = metrics.r2 = std::numeric_limits<double>::quiet_NaN();
         return metrics;
     }
-
+    
     meanActual = sumActual / validPredictions;
-
-    // Second pass: calculate errors and R² components
+    
+    // Second pass - calculate metrics in one go
     for (int i = 1; i <= n; ++i) {
         if (std::isnan(predictions(i)) || std::isnan(actual(i))) continue;
-
-        double diff = predictions(i) - actual(i);                       // Prediction error
+        
+        double diff = predictions(i) - actual(i);
         sumSquaredError += diff * diff;
         sumAbsError += std::abs(diff);
-        sumSquaredActualDiff += std::pow(actual(i) - meanActual, 2);    // Variance in actual
+        sumSquaredActualDiff += std::pow(actual(i) - meanActual, 2);
     }
-
-    // Compute final metrics
-    metrics.rmse = std::sqrt(sumSquaredError / validPredictions);       // Root Mean Square Error
-    metrics.mae = sumAbsError / validPredictions;                       // Mean Absolute Error
-    metrics.r2 = (sumSquaredActualDiff < 1e-10) ? 0.0 : 1.0 - (sumSquaredError / sumSquaredActualDiff); // R²
-
+    
+    metrics.rmse = std::sqrt(sumSquaredError / validPredictions);
+    metrics.mae = sumAbsError / validPredictions;
+    metrics.r2 = (sumSquaredActualDiff < 1e-10) ? 0.0 : 1.0 - (sumSquaredError / sumSquaredActualDiff);
+    
     return metrics;
 }
-// Function to print model coefficients and evaluation metrics
+
 void printModelSummary(const Vector& coefficients, 
                       const std::vector<NormParams>& normParams,
                       const ModelMetrics& metrics,
                       bool useMaxNorm = false,
                       const std::string& methodName = "Pseudo-Inverse") {
-    printHeader("MODEL SUMMARY: " + methodName);                    // Print section title
-
-    // Display evaluation metrics
+    printHeader("MODEL SUMMARY: " + methodName);
+    
+    // Print metrics
     std::cout << BOLD << "Model Performance Metrics:" << RESET << std::endl;
     std::cout << std::string(40, '-') << std::endl;
     std::cout << std::setw(20) << "Metric" << std::setw(20) << "Value" << std::endl;
     std::cout << std::string(40, '-') << std::endl;
-
-    // Print RMSE with NaN check
+    
+    // Handle NaN values in metrics
     if (std::isnan(metrics.rmse)) {
         std::cout << CYAN << std::setw(20) << "RMSE:" << RESET << std::setw(20) << "Error" << std::endl;
     } else {
         std::cout << CYAN << std::setw(20) << "RMSE:" << RESET << std::setw(20) << std::fixed << std::setprecision(4) << metrics.rmse << std::endl;
     }
-
-    // Print MAE with NaN check
+    
     if (std::isnan(metrics.mae)) {
         std::cout << CYAN << std::setw(20) << "MAE:" << RESET << std::setw(20) << "Error" << std::endl;
     } else {
         std::cout << CYAN << std::setw(20) << "MAE:" << RESET << std::setw(20) << std::fixed << std::setprecision(4) << metrics.mae << std::endl;
     }
-
-    // Print R² with NaN check
+    
     if (std::isnan(metrics.r2)) {
         std::cout << CYAN << std::setw(20) << "R^2:" << RESET << std::setw(20) << "Error" << std::endl;
     } else {
         std::cout << CYAN << std::setw(20) << "R^2:" << RESET << std::setw(20) << std::fixed << std::setprecision(4) << metrics.r2 << std::endl;
     }
-
+    
     std::cout << std::string(40, '-') << std::endl << std::endl;
-
-    // Check if any model coefficient is NaN before continuing
+    
+    // Check if coefficients contain NaN values
     bool hasNaN = false;
     for (int i = 1; i <= coefficients.getSize(); i++) {
         if (std::isnan(coefficients(i))) {
@@ -352,15 +368,14 @@ void printModelSummary(const Vector& coefficients,
             break;
         }
     }
-
-    // If NaN values exist, print error message and return
+    
     if (hasNaN) {
         std::cout << RED << "[ERROR] " << RESET << "Model coefficients contain NaN values. Unable to display model details." << std::endl;
         return;
     }
-
-
-    std::cout << BOLD << "Model Coefficients (Normalized Scale):" << RESET << std::endl;        // Print coefficients
+    
+    // Print coefficients
+    std::cout << BOLD << "Model Coefficients (Normalized Scale):" << RESET << std::endl;
     std::cout << std::string(40, '-') << std::endl;
     std::cout << std::setw(20) << "Parameter" << std::setw(20) << "Value" << std::endl;
     std::cout << std::string(40, '-') << std::endl;
@@ -475,7 +490,7 @@ Matrix expandFeatures(const std::vector<DataEntry>& data, bool addInteractions =
         int col = 1;
         
         // Base features (always included)
-        X(i+1, col++) = 1.0;                                    // Intercept
+        X(i+1, col++) = 1.0;  // Intercept
         X(i+1, col++) = entry.MYCT;
         X(i+1, col++) = entry.MMIN;
         X(i+1, col++) = entry.MMAX;
@@ -542,6 +557,7 @@ std::vector<std::string> getExpandedFeatureNames(bool addInteractions = true,
     
     // Pre-allocate memory to avoid reallocations
     featureNames.reserve(7 + (addPolynomials ? 6 : 0) + (addLog ? 6 : 0) + (addInteractions ? 15 : 0));
+    
     if (addPolynomials)
         for (const auto& name : baseFeatures) featureNames.push_back(name + "²");
     
@@ -576,75 +592,90 @@ std::vector<DataEntry> removeOutliers(const std::vector<DataEntry>& data, double
     
     for (int i = 0; i < 7; ++i) means[i] /= dataSize;
     
-// Calculate standard deviations in one pass
-for (const auto& entry : data) {
-    const std::vector<double> values = {
-        entry.MYCT, entry.MMIN, entry.MMAX, entry.CACH, 
-        entry.CHMIN, entry.CHMAX, entry.PRP
-    };
-    
-    for (int i = 0; i < 7; ++i) {
-        stdDevs[i] += std::pow(values[i] - means[i], 2); // Sum of squared diffs for variance
-    }
-}
-for (int i = 0; i < 7; ++i) {
-    stdDevs[i] = std::sqrt(stdDevs[i] / dataSize); // Standard deviation
-    if (stdDevs[i] < 1e-10) stdDevs[i] = 1.0; // Prevent division by near-zero
-}
-// Pre-allocate result vector with estimated size
-std::vector<DataEntry> cleanedData;
-cleanedData.reserve(dataSize);
-// Identify and filter outliers in one pass
-int outlierCount = 0;
-for (const auto& entry : data) {
-    const std::vector<double> values = {
-        entry.MYCT, entry.MMIN, entry.MMAX, entry.CACH, 
-        entry.CHMIN, entry.CHMAX, entry.PRP
-    };
-    
-    bool isOutlier = false;
-    for (int j = 0; j < 7; ++j) {
-        if (std::abs((values[j] - means[j]) / stdDevs[j]) > threshold) {
-            isOutlier = true;
-            outlierCount++;
-            break; // If any one feature is an outlier, discard the row
+    // Calculate standard deviations in one pass
+    for (const auto& entry : data) {
+        const std::vector<double> values = {
+            entry.MYCT, entry.MMIN, entry.MMAX, entry.CACH, 
+            entry.CHMIN, entry.CHMAX, entry.PRP
+        };
+        
+        for (int i = 0; i < 7; ++i) {
+            stdDevs[i] += std::pow(values[i] - means[i], 2);
         }
     }
     
-    if (!isOutlier) cleanedData.push_back(entry);
+    for (int i = 0; i < 7; ++i) {
+        stdDevs[i] = std::sqrt(stdDevs[i] / dataSize);
+        if (stdDevs[i] < 1e-10) stdDevs[i] = 1.0; // Avoid division by zero
+    }
+    
+    // Pre-allocate result vector with estimated size
+    std::vector<DataEntry> cleanedData;
+    cleanedData.reserve(dataSize);
+    
+    // Identify and filter outliers in one pass
+    int outlierCount = 0;
+    for (const auto& entry : data) {
+        const std::vector<double> values = {
+            entry.MYCT, entry.MMIN, entry.MMAX, entry.CACH, 
+            entry.CHMIN, entry.CHMAX, entry.PRP
+        };
+        
+        bool isOutlier = false;
+        for (int j = 0; j < 7; ++j) {
+            if (std::abs((values[j] - means[j]) / stdDevs[j]) > threshold) {
+                isOutlier = true;
+                outlierCount++;
+                break;
+            }
+        }
+        
+        if (!isOutlier) cleanedData.push_back(entry);
+    }
+    
+    std::cout << GREEN << "[SUCCESS] " << RESET << "Identified " << BOLD << outlierCount 
+              << RESET << " outliers (" << std::fixed << std::setprecision(1) 
+              << (100.0 * outlierCount / dataSize) << "% of data)" << std::endl;
+    std::cout << "Retained " << BOLD << cleanedData.size() << RESET << " data points" << std::endl;
+    
+    return cleanedData;
 }
-std::cout << GREEN << "[SUCCESS] " << RESET << "Identified " << BOLD << outlierCount 
-          << RESET << " outliers (" << std::fixed << std::setprecision(1) 
-          << (100.0 * outlierCount / dataSize) << "% of data)" << std::endl;
-std::cout << "Retained " << BOLD << cleanedData.size() << RESET << " data points" << std::endl;
 
-return cleanedData;
+// Function to find optimal lambda for Tikhonov regularization using k-fold cross-validation
 double findOptimalLambda(const Matrix& A, const Vector& b, int kFolds = 5) {
     printHeader("REGULARIZATION PARAMETER TUNING");
     
     const std::vector<double> lambdaValues = {0.001, 0.01, 0.1, 0.5, 1.0, 5.0, 10.0, 50.0, 100.0};
     std::vector<double> avgRmseValues(lambdaValues.size(), 0.0);
+    
     const int n = A.GetNumRows();
     const int foldSize = n / kFolds;
-
-    std::vector<int> indices(n);                                    // Create indices once
+    
+    // Create indices once
+    std::vector<int> indices(n);
     for (int i = 0; i < n; ++i) indices[i] = i + 1;
-    std::mt19937 g(42);                                             // Fixed seed for reproducibility
+    
+    std::mt19937 g(42); // Fixed seed for reproducibility
     std::shuffle(indices.begin(), indices.end(), g);
+    
     // Pre-allocate datasets to avoid repeated allocations
     Matrix trainA(n - foldSize, A.GetNumCols()); 
     Vector trainB(n - foldSize);
     Matrix validA(foldSize, A.GetNumCols());
     Vector validB(foldSize);
     NonSquareLinearSystem solver(trainA, trainB);
+    
     for (size_t l = 0; l < lambdaValues.size(); ++l) {
         double lambda = lambdaValues[l];
-        double totalRmse = 0.0;        
+        double totalRmse = 0.0;
+        
         std::cout << "Testing lambda = " << lambda << " ";
+        
         // K-fold cross validation
         for (int fold = 0; fold < kFolds; ++fold) {
             int validStartIdx = fold * foldSize + 1;
             int validEndIdx = (fold == kFolds - 1) ? n : (fold + 1) * foldSize;
+            
             // Fill train/valid matrices
             int trainRow = 1, validRow = 1;
             for (int i = 1; i <= n; ++i) {
@@ -665,9 +696,16 @@ double findOptimalLambda(const Matrix& A, const Vector& b, int kFolds = 5) {
                     trainRow++;
                 }
             }
-            // Use a fresh solver each fold
+            
+            // Update solver with new training data (avoiding recreation)
+            //solver.UpdateSystem(trainA, trainB);
+            //Vector coef = solver.SolveWithTikhonov(lambda);
+            
+            // Instead of updating an existing solver
+            // Create a new solver instance each time
             NonSquareLinearSystem foldSolver(trainA, trainB);
             Vector coef = foldSolver.SolveWithTikhonov(lambda);
+            
             // Compute RMSE directly
             double rmse = 0.0;
             for (int i = 1; i <= validB.getSize(); ++i) {
@@ -683,10 +721,10 @@ double findOptimalLambda(const Matrix& A, const Vector& b, int kFolds = 5) {
             std::cout << ".";
             std::cout.flush();
         }
+        
         avgRmseValues[l] = totalRmse / kFolds;
         std::cout << " Avg RMSE: " << std::fixed << std::setprecision(4) << avgRmseValues[l] << std::endl;
     }
-
     
     // Find best lambda
     size_t bestIdx = std::min_element(avgRmseValues.begin(), avgRmseValues.end()) - avgRmseValues.begin();
@@ -701,7 +739,9 @@ double findOptimalLambda(const Matrix& A, const Vector& b, int kFolds = 5) {
 int main() {
     displayVersionInfo();
     auto startTime = std::chrono::high_resolution_clock::now();
-    auto data = loadData("machine.data");                           // Load and prepare data more efficiently
+
+    // Load and prepare data more efficiently
+    auto data = loadData("machine.data");
     if (data.empty()) {
         std::cerr << RED << "[ERROR] " << RESET << "No data loaded. Exiting." << std::endl;
         return 1;
