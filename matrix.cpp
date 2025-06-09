@@ -80,4 +80,41 @@ Matrix Matrix::PseudoInverse() const {
         return (A_T * AAT_inv).Transpose();         // Compute the final A^T (A A^T)^-1--> transpose the result
     }
 }
-    
+// Transpose the matrix
+Matrix Matrix::Transpose() const { 
+    Matrix result(mNumCols, mNumRows);              // Swap rows and columns
+    for (int i = 1; i <= mNumRows; ++i) {
+        for (int j = 1; j <= mNumCols; ++j) {
+            result(j, i) = (*this)(i, j);           // Use 1-based indexing
+        }
+    }
+    return result;
+}
+
+// Destructor
+Matrix::~Matrix() {
+    for (int i = 0; i < mNumRows; ++i) {                // Delete each row
+        delete[] mData[i];
+    }
+    delete[] mData;                                     // Delete the array of row pointers
+}
+
+// Copy assignment operator
+Matrix& Matrix::operator=(const Matrix& other) {
+    if (this == &other) return *this;                   // avoid self-assignment
+    for (int i = 0; i < mNumRows; ++i)                  // Clean up
+        delete[] mData[i];
+    delete[] mData;
+
+    mNumRows = other.mNumRows;                          // copy dimensions
+    mNumCols = other.mNumCols;
+    mData = new double*[mNumRows];                      //allocate new memory
+    for (int i = 0; i < mNumRows; ++i) {
+        mData[i] = new double[mNumCols];
+        for (int j = 0; j < mNumCols; ++j) {            //copy data element
+            mData[i][j] = other.mData[i][j];
+        }
+    }
+    return *this;
+}
+
