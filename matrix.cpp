@@ -130,3 +130,12 @@ double& Matrix::operator()(int i, int j) {
     return mData[i - 1][j - 1];                         //adjust to 0-based indexing
 }
 
+// Const access operator ()
+const double& Matrix::operator()(int i, int j) const {
+    if (i < 1 || i > mNumRows || j < 1 || j > mNumCols) {
+        throw std::out_of_range("Matrix indices out of bounds");
+    }
+    assert(i >= 1 && i <= mNumRows && j >= 1 && j <= mNumCols);
+    return mData[i - 1][j - 1];                         //adjust to 0-based indexing
+}
+
