@@ -64,3 +64,20 @@ Matrix Matrix::PseudoInverse() const {
         return ATA_inv * A_T;                       // compute the final (A^T A)^-1 A^T
     } 
     
+    else {                                          // Under-determined: A^T (A A^T)^-1
+        Matrix A_T = this->Transpose();             // compute transpose of A
+        Matrix AAT = (*this) * A_T;                 // compute A* A^T
+        Matrix AAT_inv(mNumRows, mNumRows);         //create square matrix to store inverse AAT
+        for (int i = 1; i <= mNumRows; ++i) {       //solve (A A^T)* x = e for each columns
+            Vector e(mNumRows);
+            e(i) = 1.0;                             //set unit = 1
+            LinearSystem ls(AAT, e);
+            Vector col = ls.Solve();
+            for (int j = 1; j <= mNumRows; ++j) {   //store solution in inverse matrix
+                AAT_inv(j, i) = col(j);
+            }
+        }
+        return (A_T * AAT_inv).Transpose();         // Compute the final A^T (A A^T)^-1--> transpose the result
+    }
+}
+    
