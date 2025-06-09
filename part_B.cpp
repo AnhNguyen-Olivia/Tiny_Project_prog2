@@ -669,6 +669,24 @@ double findOptimalLambda(const Matrix& A, const Vector& b, int kFolds = 5) {
                     trainRow++;
                 }
             }
+            // Use a fresh solver each fold
+            NonSquareLinearSystem foldSolver(trainA, trainB);
+            Vector coef = foldSolver.SolveWithTikhonov(lambda);
+            // Compute RMSE directly
+            double rmse = 0.0;
+            for (int i = 1; i <= validB.getSize(); ++i) {
+                double prediction = 0;
+                for (int j = 1; j <= A.GetNumCols(); ++j) {
+                    prediction += coef(j) * validA(i, j);
+                }
+                rmse += std::pow(prediction - validB(i), 2);
+            }
+            rmse = std::sqrt(rmse / validB.getSize());
+            totalRmse += rmse;
+            
+            std::cout << ".";
+            std::cout.flush();
+        }
 
     
     // Find best lambda
