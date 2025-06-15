@@ -193,12 +193,12 @@ where `x₁` to `x₆` are model parameters determined using the linear algebra 
 
 This project was developed by:
 
-- Nguyễn Thùy Anh (Student ID: 10423198)
-- Nguyễn Bảo Thành Đạt (Student ID: 10423136)
-- Trần Anh Thư (Student ID: 10423173)
-- Nguyễn Huỳnh Kim Thoa (Student ID: 10423172)
-- Nguyễn Hồ Tuyết Phương (Student ID: 10423165)
-- Trịnh Thị Như Bình (Student ID: 10423130)
+- Nguyễn Thùy Anh (Student ID: 10423198) (Implementing Part A.3, A.4 and B, contributing 25%)
+- Nguyễn Bảo Thành Đạt (Student ID: 10423136) (Implementing Part A.3 and A.4, contributing 15%)
+- Trần Anh Thư (Student ID: 10423173) (Implementing Part A.1 and A.2, contributing 15%)
+- Nguyễn Huỳnh Kim Thoa (Student ID: 10423172) (Implementing Testcase and Part B, contributing 17.5%)
+- Nguyễn Hồ Tuyết Phương (Student ID: 10423165) (Implementing Part A.1 and A.2, contributing 15%)
+- Trịnh Thị Như Bình (Student ID: 10423130) (Writing Report, contributing 12.5%)
 
 ---
 
